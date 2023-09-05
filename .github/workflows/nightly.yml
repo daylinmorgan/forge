@@ -24,8 +24,9 @@ jobs:
         name: check latest commit is less than a day
         if: ${{ github.event_name == 'schedule' }}
         run: |
-          test -n "$(git rev-list --since="24 hours" HEAD)" \
-            && echo "quit=true" >> "$GITHUB_OUTPUT"
+          if [[ -n "$(git rev-list --since='24 hours' HEAD)" ]]; then
+            echo "quit=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build-artifacts:
     needs: check-commits
