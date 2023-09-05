@@ -1,0 +1,60 @@
+name: 🌙 Nightly Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    outputs:
+      quit: ${{ steps.should_run.outputs.quit }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: print latest commit
+        run: echo ${{ github.sha }}
+
+      - id: should_run
+        name: check latest commit is less than a day
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          test -n "$(git rev-list --since="24 hours" HEAD)" \
+            && echo "quit=true" >> "$GITHUB_OUTPUT"
+
+  build-artifacts:
+    needs: check-commits
+    if: ${{ needs.check-commits.outputs.quit != 'true' }}
+    uses: ./.github/workflows/build.yml
+
+  create-release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    needs:
+      - build-artifacts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+
+      - run: ls -R artifacts
+
+      - name: Remove Old Nightly Release
+        run: |
+          gh release delete nightly --yes || true
+          git push origin :nightly || true
+
+      - name: Generate New Nightly Release
+        run: |
+          gh release create nightly \
+            --title "Nightly Release (Pre-release)" \
+            --prerelease \
+            ./artifacts/*
+

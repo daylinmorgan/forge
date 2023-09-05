@@ -1,0 +1,39 @@
+name: ⚙️ Build Binaries
+
+on:
+  workflow_call:
+
+env:
+  APP_NAME: ccnz
+  NIM_VERSION: stable
+
+jobs:
+  build-artifact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ env.NIM_VERSION }}
+
+      # for cross compilation with ccnz
+      - uses: goto-bus-stop/setup-zig@v2
+
+      - name: Bootstrap with installed version
+        run: nimble install -Y
+
+      - name: Generate build artifacts
+        run: nimble release
+
+      - name: Create artifact bundles
+        run: nimble bundle
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+
