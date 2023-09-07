@@ -26,7 +26,7 @@ proc `$`*(c: Config): string =
 
   lines.join("\n")
 
-proc loadConfigFile*(f: string): Config =
+proc loadConfigFile*(f: string, load_targets: bool, load_bins: bool): Config =
   let
     dict = loadConfig(f)
     base = dict.getOrDefault("")
@@ -39,9 +39,9 @@ proc loadConfigFile*(f: string): Config =
   result.name = base.getOrDefault("name")
   result.version = base.getOrDefault("version")
   result.format = base.getOrDefault("format")
-  if dict.hasKey("target"):
+  if dict.hasKey("target") and load_targets:
     result.targets = dict.getOrDefault("target")
-  if dict.hasKey("bin"):
+  if dict.hasKey("bin") and load_bins:
     result.bins = dict.getOrDefault("bin")
 
 proc inferName(s: string, nimbleFile: string): string =
@@ -85,20 +85,21 @@ proc inferBin(nimbleFile: string): string =
 
 
 proc newConfig*(
-            targets: seq[string],
-             bins: seq[string],
-             outdir: string,
-            format: string,
-            name: string,
-            version: string,
-             nimble: bool,
-            configFile: string
-             ): Config =
+  targets: seq[string],
+  bins: seq[string],
+  outdir: string,
+  format: string,
+  name: string,
+  version: string,
+  nimble: bool,
+  configFile: string,
+  noConfig: bool
+  ): Config =
 
   let nimbleFile = findNimbleFile()
 
-  if configFile.fileExists:
-    result = loadConfigFile(configFile)
+  if configFile.fileExists and not noConfig:
+    result = loadConfigFile(configFile, targets.len == 0, bins.len == 0)
   else:
     # no seg faults here...
     result.targets = newOrderedTable[string, string]()

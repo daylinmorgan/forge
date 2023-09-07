@@ -50,6 +50,7 @@ proc release(
   dryrun: bool = false,
   nimble: bool = false,
   configFile: string = ".forge.cfg",
+  noConfig: bool = false,
   verbose: bool = false,
   ) =
   ## generate release assets for n>=1 targets
@@ -61,7 +62,7 @@ proc release(
   ##
   ## if name or version are not specified they will be inferred from the local .nimble file
 
-  var cfg = newConfig(
+  let cfg = newConfig(
             target,
             bin,
             outdir,
@@ -69,8 +70,10 @@ proc release(
             name,
             version,
             nimble,
-            configFile
+            configFile,
+            noConfig
   )
+
   if cfg.targets.len == 0:
     termErrQuit "expected at least 1 target"
   if cfg.bins.len == 0:
@@ -114,7 +117,8 @@ proc release(
           termEcho styleBright, "cmd: ", ansiResetCode, cmd
         let errCode = execCmd cmd
         if errCode != 0:
-          termErrQuit "problems executing cmd " & cmd
+          termErr "cmd: ", cmd
+          termErrQuit &"exited with code {errCode} see above for error"
 
 when isMainModule:
   import cligen
@@ -148,7 +152,8 @@ when isMainModule:
       "dryrun": "show command instead of executing",
       "format": "set format, see help above",
       "nimble": "use nimble as base command for compiling",
-      "config-file": "path to config"
+      "config-file": "path to config",
+      "no-config": "ignore config file"
       },
     short = {"verbose": 'V'}
     ]
