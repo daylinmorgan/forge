@@ -101,7 +101,7 @@ proc release(
     for b, bArgs in cfg.bins:
       var cmdParts: seq[string] = @[]
       let outFlag = &"--outdir:'" & (
-        outdir / formatDirName(cfg.format, cfg.name, cfg.version, t)
+        cfg.outdir / formatDirName(cfg.format, cfg.name, cfg.version, t)
       ) & "'"
 
       cmdParts &= @[baseCmd, "c"]
