@@ -1,3 +1,3 @@
-import forge/utils
+import forge/zig
 
 callZig("cc")

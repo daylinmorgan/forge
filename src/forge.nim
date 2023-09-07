@@ -1,8 +1,10 @@
-import std/[os, osproc, strformat, strutils, tables, terminal]
+import std/[os, osproc, sequtils, strformat, strutils, tables, terminal]
 
-import forge/[config, utils, term]
+import forge/[config, utils, term, zig]
 
-proc genFlags(triplet: Triplet, args: seq[string] = @[]): seq[string] =
+proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
+  let triplet = parseTriplet(target)
+
   addFlag "cpu"
   addFlag "os"
 
@@ -27,10 +29,11 @@ proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[st
   if args.len == 0:
     termErrQuit "expected additional arguments i.e. -- -d:release src/main.nim"
 
+  checkTargets(@[target])
+
   let
-    targets = zigTargets()
-    ccArgs = genFlags(parseTriplet(target, targets), args)
     rest = parseArgs(args)
+    ccArgs = genFlags(target, rest)
     baseCmd = if nimble: "nimble" else: "nim"
     cmd = (@[baseCmd] & @["c"] & ccArgs & rest).join(" ")
 
@@ -79,14 +82,15 @@ proc release(
   if cfg.bins.len == 0:
     termErrQuit "expected at least 1 bin"
 
+  checkTargets(cfg.targets.keys.toSeq())
+
   if verbose:
     termEcho $cfg
 
   if dryrun:
     termEcho styleBright, fgBlue, "dry run...see below for commands"
-
+  
   let
-    targets = zigTargets()
     baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
     rest = parseArgs(args)
 
@@ -101,7 +105,7 @@ proc release(
       ) & "'"
 
       cmdParts &= @[baseCmd, "c"]
-      cmdParts.add genFlags(parseTriplet(t, targets), rest)
+      cmdParts.add genFlags(t, rest)
       cmdParts.add "-d:release"
       cmdParts.add rest
       cmdParts.add outFlag

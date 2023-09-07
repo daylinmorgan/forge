@@ -1,6 +1,7 @@
-import std/[json, macros, math, os, osproc, sequtils, strutils, strformat, terminal]
+import std/[json, macros, math, os, sequtils, strutils, strformat, terminal]
 
 import term
+from zig import zigTargets
 
 proc columns*(items: seq[string]): string =
   ## return a list of items as equally spaced columns
@@ -21,24 +22,6 @@ template parseArgs*(args: seq[string]): seq[string] =
   else:
     args
 
-# based on https://github.com/enthus1ast/zigcc
-template callZig*(zigCmd: string) =
-  # Set the zig compiler to call and append args
-  var args = @[zigCmd]
-  args &= commandLineParams()
-  # Start process
-  let process = startProcess(
-    "zig",
-    args = args,
-    options = {poStdErrToStdOut, poUsePath, poParentStreams}
-  )
-  # Get the code so we can carry across the exit code
-  let exitCode = process.waitForExit()
-  # Clean up
-  close process
-  quit exitCode
-
-
 type
   Triplet* = object
     cpu: string
@@ -47,28 +30,24 @@ type
 
 proc `$`*(t: Triplet): string = &"{t.cpu}-{t.os}-{t.libc}"
 
-proc parseTriplet*(s: string, targets: seq[string]): Triplet =
-  if s notin targets:
-    termErr &"unknown target: {s}", "", "must be one of:"
-    stderr.writeLine targets.columns
+proc checkTargets*(targets: seq[string]) = 
+  let knownTargets = zigTargets()
+  var unknownTargets: seq[string]
+  for target in targets:
+    if target notin knowntargets:
+      unknownTargets.add target
+
+  if unknownTargets.len != 0:
+    termErr &"unknown target(s): " & unknownTargets.join(", ")
+    termEcho "must be one of:"
+    stderr.writeLine knownTargets.columns
     quit 1
 
-
+proc parseTriplet*(s: string): Triplet =
   let parts = s.split("-")
   result.cpu = parts[0]
   result.os = parts[1]
   result.libc = parts[2]
-
-proc zigExists*() =
-  if (findExe "zig") == "":
-    termErr "zig not found"
-    termErr "  forge requires a working installation of zig"
-    termErr "  see: https://ziglang.org/download/"
-    quit 1
-
-proc zigTargets*(): seq[string] =
-  let (output, _) = execCmdEx "zig targets"
-  parseJson(output)["libc"].to(seq[string])
 
 macro addFlag*(arg: untyped): untyped =
   let
