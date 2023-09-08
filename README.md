@@ -44,7 +44,7 @@ You can either specify all commands on the CLI or use a config file.
 
 Example:
 ```sh
-forge release --target x86_64-linux-musl x86_64-macos-none --bin src/forge.nim
+forge release --target,=,x86_64-linux-musl,x86_64-macos-none --bin src/forge.nim
 ```
 
 Result:
