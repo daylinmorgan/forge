@@ -1,0 +1,17 @@
+name: 🚀 Release
+
+on:
+  push:
+    tags:
+      - 'v*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-artifacts:
+    uses: daylinmorgan/actions/.github/workflows/build-nim-forge.yml@main
+
+  create-release:
+    needs: build-artifacts
+    uses: daylinmorgan/actions/.github/workflows/release.yml@main
