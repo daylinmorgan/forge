@@ -1,6 +1,6 @@
 # forge
 
-[![nimble shield](https://img.shields.io/github/v/tag/daylinmorgan/forge?filter=v*&logo=Nim&label=nimble&labelColor=black&color=yellow)](https://nimble.directory/pkg/forge)
+[![nimble shield](https://img.shields.io/github/v/tag/daylinmorgan/forge?filter=v*&logo=Nim&label=nimble&labelColor=black&color=%23f3d400)](https://nimble.directory/pkg/forge)
 
 
 A basic toolchain to forge (cross-compile) your multi-platform `nim` binaries.
