@@ -13,7 +13,7 @@ requires "nim >= 2.0.0",
 import strformat
 
 task release, "build release assets":
-  version = (gorgeEx "git describe --tags --always").output
+  version = (gorgeEx "git describe --tags --always --match 'v*'").output
   exec &"forge release -v {version} -V"
 
 task bundle, "package build assets":
