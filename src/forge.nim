@@ -89,7 +89,7 @@ proc release(
 
   if dryrun:
     termEcho styleBright, fgBlue, "dry run...see below for commands"
-  
+
   let
     baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
     rest = parseArgs(args)
@@ -144,7 +144,9 @@ when isMainModule:
   vsnCfg.version = vsn
 
 
-  dispatchMulti(["multi", cf = vsnCfg], [cc, help = {
+  dispatchMulti(
+    ["multi", cf = vsnCfg],
+    [cc, help = {
       "dryrun": "show command instead of executing",
       "nimble": "use nimble as base command for compiling"
     }],
