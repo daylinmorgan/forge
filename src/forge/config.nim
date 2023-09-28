@@ -1,7 +1,7 @@
 import std/[parsecfg, tables, os, strutils, strformat]
 
 type
-  Config* = object
+  ForgeConfig* = object
     targets*: OrderedTableRef[string, string]
     bins*: OrderedTableRef[string, string]
     outdir*: string
@@ -10,7 +10,7 @@ type
     version*: string
     nimble*: bool
 
-proc `$`*(c: Config): string =
+proc `$`*(c: ForgeConfig): string =
   var lines: seq[string] = @[]
   lines.add "config ="
   lines.add "| nimble  " & $c.nimble
@@ -26,7 +26,8 @@ proc `$`*(c: Config): string =
 
   lines.join("\n")
 
-proc loadConfigFile*(f: string, load_targets: bool, load_bins: bool): Config =
+proc loadConfigFile*(f: string, load_targets: bool,
+    load_bins: bool): ForgeConfig =
   let
     dict = loadConfig(f)
     base = dict.getOrDefault("")
@@ -70,9 +71,9 @@ proc findNimbleFile(): string =
 proc inferVersion(s: string, nimbleFile: string): string =
   if s != "": return s
 
-  # TODO: catch io errors?
-  let nimbleCfg = loadConfig(nimbleFile)
-  return nimbleCfg.getSectionValue("", "version")
+  if nimbleFile.fileExists:
+    let nimbleCfg = loadConfig(nimbleFile)
+    return nimbleCfg.getSectionValue("", "version")
 
 proc inferBin(nimbleFile: string): string =
   let
@@ -94,7 +95,7 @@ proc newConfig*(
   nimble: bool,
   configFile: string,
   noConfig: bool
-  ): Config =
+  ): ForgeConfig =
 
   let nimbleFile = findNimbleFile()
 
