@@ -1,2 +1,6 @@
 /bin
 /dist
+
+# atlas
+*.workspace
+src/nim.cfg
