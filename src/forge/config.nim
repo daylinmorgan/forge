@@ -26,20 +26,26 @@ proc `$`*(c: ForgeConfig): string =
 
   lines.join("\n")
 
-proc loadConfigFile*(f: string, load_targets: bool,
-    load_bins: bool): ForgeConfig =
-  let
-    dict = loadConfig(f)
-    base = dict.getOrDefault("")
+proc loadConfigFile*(
+    f: string,
+    load_targets: bool,
+    load_bins: bool
+  ): ForgeConfig =
+
+  let dict = loadConfig(f)
+
+  # get the top level flags
+  if dict.hasKey(""):
+    let base = dict[""]
+    result.nimble = base.hasKey("nimble")
+    result.outdir = base.getOrDefault("outdir")
+    result.name = base.getOrDefault("name")
+    result.version = base.getOrDefault("version")
+    result.format = base.getOrDefault("format")
 
   result.targets = newOrderedTable[string, string]()
   result.bins = newOrderedTable[string, string]()
 
-  result.nimble = base.hasKey("nimble")
-  result.outdir = base.getOrDefault("outdir")
-  result.name = base.getOrDefault("name")
-  result.version = base.getOrDefault("version")
-  result.format = base.getOrDefault("format")
   if dict.hasKey("target") and load_targets:
     result.targets = dict.getOrDefault("target")
   if dict.hasKey("bin") and load_bins:
