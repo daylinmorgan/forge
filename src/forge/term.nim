@@ -1,17 +1,17 @@
-import std/terminal
+import std/strutils
 
-# TODO support NO_COLOR for these
-let prefix = ansiForegroundColorCode(fgMagenta, bright = true) & "forge" &
-    ansiResetCode & ansiForegroundColorCode(fgYellow) & " || " & ansiResetCode
+import bbansi
 
-template termEcho*(args: varargs[untyped]) =
-  stderr.styledWriteLine(prefix, args)
+let prefix = "[bold magenta]forge[/] [yellow]||[/] ".bb
 
-template termErr*(args: varargs[untyped]) =
-  stderr.styledWriteLine(prefix, fgRed, "error ", fgDefault, args)
+template termEcho*(args: varargs[string | BbString, `$`]) =
+  stderr.writeLine $prefix, args.join(" ")
 
-template termErrQuit*(args: varargs[untyped]) =
-  termErr(args)
+template termErr*(args: varargs[string | BbString, `$`]) =
+  stderr.writeLine $prefix, $"[red]error ||[/] ".bb, args.join(" ")
+
+template termErrQuit*(args: varargs[string | BbString, `$`]) =
+  termErr args
   quit 1
 
-
+export bbansi

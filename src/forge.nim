@@ -85,17 +85,16 @@ proc release(
   checkTargets(cfg.targets.keys.toSeq())
 
   if verbose:
-    termEcho $cfg
+    cfg.showConfig
 
   if dryrun:
-    termEcho styleBright, fgBlue, "dry run...see below for commands"
+    termEcho "[bold blue]dry run...see below for commands".bb
 
   let
     baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
     rest = parseArgs(args)
 
-  termEcho styleBright, fgYellow,
-    &"compiling {cfg.bins.len} binaries for {cfg.targets.len} targets"
+  termEcho fmt"[bold yellow]compiling {cfg.bins.len} binaries for {cfg.targets.len} targets".bb
 
   for t, tArgs in cfg.targets:
     for b, bArgs in cfg.bins:
@@ -118,7 +117,7 @@ proc release(
         stderr.writeLine cmd
       else:
         if verbose:
-          termEcho styleBright, "cmd: ", ansiResetCode, cmd
+          termEcho fmt"[bold]cmd[/]: {cmd}".bb
         let errCode = execCmd cmd
         if errCode != 0:
           termErr "cmd: ", cmd

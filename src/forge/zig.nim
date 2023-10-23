@@ -1,5 +1,4 @@
-import std/[json, os, osproc, terminal]
-
+import std/[json, os, osproc]
 import term
 
 proc zigTargets*(): seq[string] =
@@ -26,7 +25,7 @@ template callZig*(zigCmd: string) =
 
 proc zigExists*() =
   if (findExe "zig") == "":
-    termErr "zig not found"
+    termErr "[red]zig not found".bb
     termErr "  forge requires a working installation of zig"
     termErr "  see: https://ziglang.org/download/"
     quit 1

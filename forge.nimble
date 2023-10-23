@@ -8,7 +8,9 @@ binDir        = "bin"
 
 
 requires "nim >= 2.0.0",
-         "cligen"
+         "cligen",
+         "https://github.com/daylinmorgan/bbansi#head"
+
 
 import strformat
 

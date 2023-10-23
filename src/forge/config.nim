@@ -1,4 +1,5 @@
 import std/[parsecfg, tables, os, strutils, strformat]
+import term
 
 type
   ForgeConfig* = object
@@ -10,21 +11,31 @@ type
     version*: string
     nimble*: bool
 
-proc `$`*(c: ForgeConfig): string =
-  var lines: seq[string] = @[]
-  lines.add "config ="
-  lines.add "| nimble  " & $c.nimble
-  lines.add "| outdir  " & c.outdir
-  lines.add "| format  " & c.format
-  lines.add "| version " & c.version
-  lines.add "| targets:"
-  for target, args in c.targets:
-    lines.add "|   " & target & (if args != "": "|" & args else: "")
-  lines.add "| bins:"
-  for bin, args in c.bins:
-    lines.add "|   " & bin & (if args != "": "|" & args else: "")
+proc showConfig*(c: ForgeConfig) =
+  var lines: string = ""
+  template addLine(l: string) = lines.add(l & "\n")
+  proc addNameArgs(name, args: string): string =
+    result.add fmt"|  {name}"
+    if args != "":
+      result.add fmt" | " & $args.bb("faint")
 
-  lines.join("\n")
+  addLine $fmt"""
+config =
+| [blue]nimble[/]  {c.nimble}
+| [blue]outdir[/]  {c.outdir}
+| [blue]format[/]  {c.format}
+| [blue]version[/] {c.version}""".bb
+
+  
+  addLine $"| [green]targets[/]:".bb
+  for target, args in c.targets:
+    addLine addNameArgs(target, args)
+
+  addLine $"| [green]bins[/]:".bb
+  for bin, args in c.bins:
+    addline addNameArgs(bin, args)
+
+  termEcho lines
 
 proc loadConfigFile*(
     f: string,
