@@ -17,7 +17,7 @@ jobs:
   build-artifacts:
     needs: check-commits
     if: ${{ needs.check-commits.outputs.quit != 'true' }}
-    uses: daylinmorgan/actions/.github/workflows/build-nim-forge.yml@main
+    uses: ./.github/workflows/build.yml
 
   generate-release:
     needs: build-artifacts
