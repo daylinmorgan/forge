@@ -1,4 +1,4 @@
-import std/[os, osproc, sequtils, strformat, strutils, tables, terminal]
+import std/[os, osproc, sequtils, strformat, strutils, tables]
 
 import forge/[config, utils, term, zig]
 
@@ -21,7 +21,7 @@ proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
 proc targets() =
   ## show available targets
   let targetList = zigTargets()
-  termEcho styleBright, fgGreen, "available targets:"
+  termEcho "[bold green]available targets:".bb
   stderr.writeLine targetList.columns
 
 proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string]) =
@@ -128,7 +128,7 @@ when isMainModule:
   zigExists()
 
   const
-    customMulti = "${doc}Usage:\n  $command {SUBCMD} [sub-command options & parameters]\n\nsubcommands:\n$subcmds"
+    customMulti = "Usage:\n  $command {SUBCMD} [sub-command options & parameters]\n\nsubcommands:\n$subcmds"
     vsn = staticExec "git describe --tags --always HEAD"
 
 
