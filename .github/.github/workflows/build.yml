@@ -1,9 +1,0 @@
-name: ⚙️ Build Binaries
-
-on:
-  workflow_dispatch:
-  workflow_call:
-
-jobs:
-  build-artifact:
-    uses: daylinmorgan/actions/.github/workflows/build-nim-forge.yml@main
