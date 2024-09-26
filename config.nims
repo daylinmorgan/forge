@@ -5,7 +5,7 @@ task build, "build":
 
 task release, "build release assets":
   version = (gorgeEx "git describe --tags --always --match 'v*'").output
-  exec fmt"./bin/forge release -v {version} -V"
+  exec fmt"forge release -v {version} -V"
 
 task bundle, "package build assets":
   withDir "dist":

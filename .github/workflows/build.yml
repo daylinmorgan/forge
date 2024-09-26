@@ -8,26 +8,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: jiro4989/setup-nim-action@v1
+      - uses: jiro4989/setup-nim-action@v2
         with:
-          nim-version: 2.0.0
+          nim-version: 2.0.8
 
       - uses: goto-bus-stop/setup-zig@v2
 
       - name: Bootstrap with installed version
-        run: nimble install -Y
+        run: |
+          nimble install -Y
 
       - name: Generate build artifacts
-        run: nimble release
+        run: |
+          nimble setup -l
+          nim release
 
       - name: Create artifact bundles
-        run: nimble bundle
+        run: nim bundle
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
