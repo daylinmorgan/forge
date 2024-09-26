@@ -1,6 +1,6 @@
 import std/strutils
 
-import bbansi
+import hwylterm
 
 let prefix = "[bold magenta]forge[/] [yellow]||[/] ".bb
 
@@ -14,4 +14,4 @@ template termErrQuit*(args: varargs[string | BbString, `$`]) =
   termErr args
   quit 1
 
-export bbansi
+export hwylterm

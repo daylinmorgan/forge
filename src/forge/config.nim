@@ -19,19 +19,19 @@ proc showConfig*(c: ForgeConfig) =
     if args != "":
       result.add fmt" | " & $args.bb("faint")
 
-  addLine $fmt"""
+  addLine $bbfmt"""
 config =
 | [blue]nimble[/]  {c.nimble}
 | [blue]outdir[/]  {c.outdir}
 | [blue]format[/]  {c.format}
-| [blue]version[/] {c.version}""".bb
+| [blue]version[/] {c.version}"""
 
   
-  addLine $"| [green]targets[/]:".bb
+  addLine $bb"| [green]targets[/]:"
   for target, args in c.targets:
     addLine addNameArgs(target, args)
 
-  addLine $"| [green]bins[/]:".bb
+  addLine $bb"| [green]bins[/]:"
   for bin, args in c.bins:
     addline addNameArgs(bin, args)
 
@@ -41,8 +41,7 @@ proc loadConfigFile*(
     f: string,
     load_targets: bool,
     load_bins: bool
-  ): ForgeConfig =
-
+): ForgeConfig =
   let dict = loadConfig(f)
 
   # get the top level flags
@@ -65,7 +64,7 @@ proc loadConfigFile*(
 proc inferName(s: string, nimbleFile: string): string =
   if s != "":
     return s
-  elif nimbleFile != "":
+  elif nimbleFile != "": 
     return nimbleFile.rsplit(".", maxsplit = 1)[0]
 
 proc findNimbleFile(): string =
@@ -112,7 +111,7 @@ proc newConfig*(
   nimble: bool,
   configFile: string,
   noConfig: bool
-  ): ForgeConfig =
+): ForgeConfig =
 
   let nimbleFile = findNimbleFile()
 

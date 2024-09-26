@@ -1,5 +1,4 @@
 import std/[os, osproc, sequtils, strformat, strutils, tables]
-
 import forge/[config, utils, term, zig]
 
 proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
@@ -26,6 +25,7 @@ proc targets() =
 
 proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string]) =
   ## compile with zig cc
+  zigExists()
   if args.len == 0:
     termErrQuit "expected additional arguments i.e. -- -d:release src/main.nim"
 
@@ -64,6 +64,7 @@ proc release(
   ##  default: ${name}-v${verison}-${target}
   ##
   ## if name or version are not specified they will be inferred from the local .nimble file
+  zigExists()
 
   let cfg = newConfig(
             target,
@@ -125,33 +126,23 @@ proc release(
 
 when isMainModule:
   import cligen
-  zigExists()
+  import hwylterm/cli
+  hwylCli(clCfg)
 
-  const
-    customMulti = "Usage:\n  $command {SUBCMD} [sub-command options & parameters]\n\nsubcommands:\n$subcmds"
-    vsn = staticExec "git describe --tags --always HEAD"
-
-
-  if clCfg.useMulti == "": clCfg.useMulti = customMulti
-  if clCfg.helpAttr.len == 0:
-    clCfg.helpAttr = {"cmd": "\e[1;36m", "clDescrip": "", "clDflVal": "\e[33m",
-        "clOptKeys": "\e[32m", "clValType": "\e[31m", "args": "\e[3m"}.toTable
-    clCfg.helpAttrOff = {"cmd": "\e[m", "clDescrip": "\e[m", "clDflVal": "\e[m",
-        "clOptKeys": "\e[m", "clValType": "\e[m", "args": "\e[m"}.toTable
+  let clUse* = $bb("$command $args\n${doc}[bold]Options[/]:\n$options")
+  const vsn = staticExec "git describe --tags --always HEAD"
 
   var vsnCfg = clCfg
   vsnCfg.version = vsn
 
-
   dispatchMulti(
     ["multi", cf = vsnCfg],
-    [cc, help = {
-      "dryrun": "show command instead of executing",
-      "nimble": "use nimble as base command for compiling"
+    [cc, usage = clUse, help = {
+        "dryrun": "show command instead of executing",
+        "nimble": "use nimble as base command for compiling"
     }],
-    [targets],
-    [release,
-      help = {
+    [targets, usage = clUse],
+    [release, usage = clUse, help = {
       "target": "set target, may be repeated",
       "bin": "set bin, may be repeated",
       "dryrun": "show command instead of executing",
@@ -160,6 +151,6 @@ when isMainModule:
       "config-file": "path to config",
       "no-config": "ignore config file"
       },
-    short = {"verbose": 'V'}
+      short = {"verbose": 'V'}
     ]
   )
