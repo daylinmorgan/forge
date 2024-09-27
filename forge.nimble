@@ -1,4 +1,4 @@
-version       = "2023.1002"
+version       = "2024.1003"
 author        = "Daylin Morgan"
 description   = "build nim binaries for all the platforms"
 license       = "MIT"
