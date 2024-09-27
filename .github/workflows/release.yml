@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-artifacts:
-    uses: daylinmorgan/actions/.github/workflows/build-nim-forge.yml@main
+    uses: ./.github/workflows/build.yml
 
   create-release:
     needs: build-artifacts
