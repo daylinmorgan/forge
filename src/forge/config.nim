@@ -1,19 +1,20 @@
 import std/[parsecfg, tables, os, strutils, strformat]
 import term
 
-type
-  ForgeConfig* = object
-    targets*: OrderedTableRef[string, string]
-    bins*: OrderedTableRef[string, string]
-    outdir*: string
-    format*: string
-    name*: string
-    version*: string
-    nimble*: bool
+type ForgeConfig* = object
+  targets*: OrderedTableRef[string, string]
+  bins*: OrderedTableRef[string, string]
+  outdir*: string
+  format*: string
+  name*: string
+  version*: string
+  nimble*: bool
 
 proc showConfig*(c: ForgeConfig) =
   var lines: string = ""
-  template addLine(l: string) = lines.add(l & "\n")
+  template addLine(l: string) =
+    lines.add(l & "\n")
+
   proc addNameArgs(name, args: string): string =
     result.add fmt"|  {name}"
     if args != "":
@@ -26,7 +27,6 @@ config =
 | [blue]format[/]  {c.format}
 | [blue]version[/] {c.version}"""
 
-  
   addLine $bb"| [green]targets[/]:"
   for target, args in c.targets:
     addLine addNameArgs(target, args)
@@ -37,11 +37,7 @@ config =
 
   termEcho lines
 
-proc loadConfigFile*(
-    f: string,
-    load_targets: bool,
-    load_bins: bool
-): ForgeConfig =
+proc loadConfigFile*(f: string, load_targets: bool, load_bins: bool): ForgeConfig =
   let dict = loadConfig(f)
 
   # get the top level flags
@@ -64,17 +60,18 @@ proc loadConfigFile*(
 proc inferName(s: string, nimbleFile: string): string =
   if s != "":
     return s
-  elif nimbleFile != "": 
+  elif nimbleFile != "":
     return nimbleFile.rsplit(".", maxsplit = 1)[0]
 
 proc findNimbleFile(): string =
   var candidates: seq[string]
   for kind, path in walkDir(getCurrentDir(), relative = true):
-    case kind:
-      of pcFile, pcLinkToFile:
-        if path.endsWith(".nimble"):
-          candidates.add path
-      else: discard
+    case kind
+    of pcFile, pcLinkToFile:
+      if path.endsWith(".nimble"):
+        candidates.add path
+    else:
+      discard
 
   # nimble will probably prevent this,
   # but not sure about atlas or bespoke builds
@@ -85,7 +82,8 @@ proc findNimbleFile(): string =
     return candidates[0]
 
 proc inferVersion(s: string, nimbleFile: string): string =
-  if s != "": return s
+  if s != "":
+    return s
 
   if nimbleFile.fileExists:
     let nimbleCfg = loadConfig(nimbleFile)
@@ -97,22 +95,22 @@ proc inferBin(nimbleFile: string): string =
     default = "src" / &"{pkgName}.nim"
     backup = &"{pkgName}.nim"
 
-  if default.fileExists(): return default
-  if backup.fileExists(): return backup
-
+  if default.fileExists():
+    return default
+  if backup.fileExists():
+    return backup
 
 proc newConfig*(
-  targets: seq[string],
-  bins: seq[string],
-  outdir: string,
-  format: string,
-  name: string,
-  version: string,
-  nimble: bool,
-  configFile: string,
-  noConfig: bool
+    targets: seq[string],
+    bins: seq[string],
+    outdir: string,
+    format: string,
+    name: string,
+    version: string,
+    nimble: bool,
+    configFile: string,
+    noConfig: bool,
 ): ForgeConfig =
-
   let nimbleFile = findNimbleFile()
 
   if configFile.fileExists and not noConfig:
@@ -132,8 +130,10 @@ proc newConfig*(
   if result.version == "":
     result.version = inferVersion(version, nimbleFile)
   if result.format == "":
-    if format != "": result.format = format
-    else: result.format = "${name}-v${version}-${target}"
+    if format != "":
+      result.format = format
+    else:
+      result.format = "${name}-v${version}-${target}"
 
   for t in targets:
     result.targets[t] = ""

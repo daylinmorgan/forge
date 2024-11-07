@@ -12,9 +12,7 @@ template callZig*(zigCmd: string) =
   args &= commandLineParams()
   # Start process
   let process = startProcess(
-    "zig",
-    args = args,
-    options = {poStdErrToStdOut, poUsePath, poParentStreams}
+    "zig", args = args, options = {poStdErrToStdOut, poUsePath, poParentStreams}
   )
   # Get the code so we can carry across the exit code
   let exitCode = process.waitForExit()
@@ -22,12 +20,9 @@ template callZig*(zigCmd: string) =
   close process
   quit exitCode
 
-
 proc zigExists*() =
   if (findExe "zig") == "":
     termErr "[red]zig not found".bb
     termErr "  forge requires a working installation of zig"
     termErr "  see: https://ziglang.org/download/"
     quit 1
-
-
