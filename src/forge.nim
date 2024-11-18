@@ -121,28 +121,27 @@ when isMainModule:
     flags:
       [shared]
       `dry-run`:
-        T bool
         ? "show command instead of executing"
         - n
       nimble:
-        T bool
         ? "use nimble as base command for compiling"
     subcommands:
-      --- targets
+      [targets]
       ... "show available targets"
       run: targets()
 
-      --- cc
+      [cc]
       ...  "compile with zig cc"
       flags:
         ^[shared]
         target:
+          T string
           ? "target triple"
           - t
       run:
         cc(target, `dry-run`, nimble, args)
 
-      --- release
+      [release]
       ... """
       generate release assets for n>=1 targets
 
@@ -156,7 +155,6 @@ when isMainModule:
       flags:
         ^[shared]
         verbose:
-          T bool
           ? "enable verbose"
           - v
         target:
@@ -169,21 +167,25 @@ when isMainModule:
           ? "set bin, may be repeated"
           * @[]
         format:
+          T string
           ? "set format, see help above"
         `config-file`:
+          T string
           ? "path to config"
           * ".forge.cfg"
         `no-config`:
-          T bool
           ? "ignore config file"
         outdir:
+          T string
           ? "path to output dir"
           * "dist"
           - o
         name:
+          T string
           ? "set name, inferred otherwise"
           * ""
         version:
+          T string
           ? "set version, inferred otherwise"
           * ""
       run:
