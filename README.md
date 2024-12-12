@@ -1,7 +1,6 @@
 # forge
 
-[![nimble shield](https://img.shields.io/github/v/tag/daylinmorgan/forge?filter=v*&logo=Nim&label=nimble&labelColor=black&color=%23f3d400)](https://nimble.directory/pkg/forge)
-
+[![nimble][nimble-shield]][nimpkgs-link]
 
 A basic toolchain to forge (cross-compile) your multi-platform `nim` binaries.
 
@@ -114,3 +113,9 @@ nimble c --cpu:amd64 --os:Linux --cc:clang --clang.exe='forgecc' --clang.linkere
 ## Acknowledgements
 
 Thanks to [Andrew Kelley](https://github.com/andrewrk) and the many `zig` [contributors](https://github.com/ziglang/zig/graphs/contributors).
+
+
+<!-- shields/links -->
+
+[nimble-shield]: https://img.shields.io/github/v/tag/daylinmorgan/forge?filter=v*&logo=Nim&label=nimble&labelColor=black&color=%23f3d400
+[nimpkgs-link]: https://nimpkgs.dayl.in/#/pkg/forge
