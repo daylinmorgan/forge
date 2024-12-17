@@ -8,4 +8,4 @@ binDir        = "bin"
 
 
 requires "nim >= 2.0.0"
-requires "https://github.com/daylinmorgan/hwylterm#748f7e"
+requires "https://github.com/daylinmorgan/hwylterm#3cf572ea"
