@@ -132,6 +132,8 @@ when isMainModule:
 
       [cc]
       ...  "compile with zig cc"
+      positionals:
+        args seq[string]
       flags:
         ^[shared]
         target:
@@ -146,12 +148,13 @@ when isMainModule:
       generate release assets for n>=1 targets
 
       format argument:
-      format is a template string used for each target directory
-      available fields are name, version, target
-      default: ${name}-v${verison}-${target}
+        format is a template string used for each target directory
+        available fields are [b i]name, version, target[/]
 
       if name or version are not specified they will be inferred from the local .nimble file
       """
+      positionals:
+        args seq[string]
       flags:
         ^[shared]
         verbose:
@@ -160,15 +163,16 @@ when isMainModule:
         target:
           T seq[string]
           ? "set target, may be repeated"
-          * @[]
+          * newSeq[string]()
           - t
         bin:
           T seq[string]
           ? "set bin, may be repeated"
-          * @[]
+          * newSeq[string]()
         format:
           T string
-          ? "set format, see help above"
+          ? "set format"
+          * "${name}-v${version}-${target}"
         `config-file`:
           T string
           ? "path to config"

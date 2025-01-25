@@ -130,10 +130,7 @@ proc newConfig*(
   if result.version == "":
     result.version = inferVersion(version, nimbleFile)
   if result.format == "":
-    if format != "":
-      result.format = format
-    else:
-      result.format = "${name}-v${version}-${target}"
+    result.format = format
 
   for t in targets:
     result.targets[t] = ""
