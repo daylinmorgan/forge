@@ -7,6 +7,7 @@ proc zigTargets*(): seq[string] =
 
 # based on https://github.com/enthus1ast/zigcc
 template callZig*(zigCmd: string) =
+  zigExists()
   # Set the zig compiler to call and append args
   var args = @[zigCmd]
   args &= commandLineParams()
