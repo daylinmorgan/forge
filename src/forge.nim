@@ -120,11 +120,8 @@ when isMainModule:
     V vsn
     flags:
       [shared]
-      `dry-run`:
-        ? "show command instead of executing"
-        - n
-      nimble:
-        ? "use nimble as base command for compiling"
+      n|`dry-run` "show command instead of executing"
+      nimble "use nimble as base command for compiling"
     subcommands:
       [targets]
       ... "show available targets"
@@ -136,10 +133,7 @@ when isMainModule:
         args seq[string]
       flags:
         ^[shared]
-        target:
-          T string
-          ? "target triple"
-          - t
+        t|target(string, "target triple")
       run:
         cc(target, `dry-run`, nimble, args)
 
@@ -153,45 +147,21 @@ when isMainModule:
 
       if name or version are not specified they will be inferred from the local .nimble file
       """
+      alias r
       positionals:
         args seq[string]
       flags:
         ^[shared]
-        verbose:
-          ? "enable verbose"
-          - v
-        target:
-          T seq[string]
-          ? "set target, may be repeated"
-          * newSeq[string]()
-          - t
-        bin:
-          T seq[string]
-          ? "set bin, may be repeated"
-          * newSeq[string]()
-        format:
-          T string
-          ? "set format"
-          * "${name}-v${version}-${target}"
-        `config-file`:
-          T string
-          ? "path to config"
-          * ".forge.cfg"
-        `no-config`:
-          ? "ignore config file"
-        outdir:
-          T string
-          ? "path to output dir"
-          * "dist"
-          - o
-        name:
-          T string
-          ? "set name, inferred otherwise"
-          * ""
-        version:
-          T string
-          ? "set version, inferred otherwise"
-          * ""
+        v|verbose "enable verbose"
+        # hwylterm should support @[] syntax and try to infer type to change call
+        t|target(newSeq[string](), seq[string], "set target, may be repeated")
+        bin(newSeq[string](), seq[string], "set bin, may be repeated")
+        format("${name}-v${version}-${target}", string, "set format")
+        `config-file`(".forge.cfg", string, "path to config")
+        `no-config` "ignore config file"
+        o|outdir("dist", string, "path to output dir")
+        name(string, "set name, inferred otherwise")
+        version(string, "set version, inferred otherwise")
       run:
         release(
             target,
