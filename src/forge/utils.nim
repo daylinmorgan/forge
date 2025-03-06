@@ -29,7 +29,7 @@ type Triplet* = object
 proc `$`*(t: Triplet): string =
   &"{t.cpu}-{t.os}-{t.libc}"
 
-proc checkTargets*(targets: seq[string]) =
+proc checkTargets*(targets: varargs[string]) =
   let knownTargets = zigTargets()
   var unknownTargets: seq[string]
   for target in targets:

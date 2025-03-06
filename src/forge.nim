@@ -1,4 +1,4 @@
-import std/[os, osproc, sequtils, strformat, strutils, tables]
+import std/[os, osproc, sequtils, strformat, strutils]
 import forge/[config, utils, term, zig]
 
 proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
@@ -62,16 +62,15 @@ proc release(
 
   let cfg =
     newConfig(target, bin, outdir, format, name, version, nimble, configFile, noConfig)
-
-  if cfg.targets.len == 0:
+  if not cfg.hasTargets:
     errQuit "expected at least 1 target"
-  if cfg.bins.len == 0:
+  if not cfg.hasBins:
     errQuit "expected at least 1 bin"
 
-  checkTargets(cfg.targets.keys.toSeq())
+  checkTargets(cfg.getTriples())
 
   if verbose:
-    cfg.showConfig
+    info "config = \n" & cfg.bb
 
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
@@ -80,35 +79,32 @@ proc release(
     baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
     rest = parseArgs(args)
 
-  info fmt"[bold cyan]compiling {cfg.bins.len} binaries for {cfg.targets.len} targets".bb
+  info bbfmt"[bold cyan]{cfg.buildPlan}"
 
-  for t, tArgs in cfg.targets:
-    for b, bArgs in cfg.bins:
-      var cmdParts: seq[string] = @[]
-      let outFlag =
-        &"--outdir:'" &
-        (cfg.outdir / formatDirName(cfg.format, cfg.name, cfg.version, t)) & "'"
+  for (triple, path, params) in cfg.builds:
+    var cmdParts: seq[string] = @[]
+    let outFlag =
+      &"--outdir:'" &
+      (cfg.outdir / formatDirName(params.format, cfg.name, cfg.version, triple)) & "'"
 
-      cmdParts &= @[baseCmd, "c"]
-      cmdParts.add genFlags(t, rest)
-      cmdParts.add "-d:release"
-      cmdParts.add rest
-      cmdParts.add outFlag
-      for a in @[targs, bargs]:
-        if a != "":
-          cmdParts.add a
-      cmdParts.add b
+    cmdParts &= @[baseCmd, "c"]
+    cmdParts.add genFlags(triple, rest)
+    cmdParts.add "-d:release"
+    cmdParts.add rest
+    cmdParts.add outFlag
+    cmdParts.add params.args
+    cmdParts.add path
 
-      let cmd = cmdParts.join(" ")
-      if dryrun:
-        stderr.writeLine cmd
-      else:
-        if verbose:
-          info fmt"[bold]cmd[/]: {cmd}".bb
-        let errCode = execCmd cmd
-        if errCode != 0:
-          err "cmd: ", cmd
-          errQuit &"exited with code {errCode} see above for err"
+    let cmd = cmdParts.join(" ")
+    if dryrun:
+      stderr.writeLine cmd
+    else:
+      if verbose:
+        info fmt"[bold]cmd[/]: {cmd}".bb
+      let errCode = execCmd cmd
+      if errCode != 0:
+        err "cmd: ", cmd
+        errQuit &"exited with code {errCode} see above for err"
 
 
 when isMainModule:
@@ -160,7 +156,7 @@ when isMainModule:
         t|target(newSeq[string](), seq[string], "set target, may be repeated")
         bin(newSeq[string](), seq[string], "set bin, may be repeated")
         format("${name}-v${version}-${target}", string, "set format")
-        `config-file`(".forge.cfg", string, "path to config")
+        `config-file`(chooseConfig(), string, "path to config")
         `no-config` "ignore config file"
         o|outdir("dist", string, "path to output dir")
         name(string, "set name, inferred otherwise")
