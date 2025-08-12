@@ -33,7 +33,7 @@ template callZig*(zigCmd: string) =
 
 proc zigExists*() =
   if (findExe "zig") == "":
-    termErr "[red]zig not found".bb
-    termErr "  forge requires a working installation of zig"
-    termErr "  see: https://ziglang.org/download/"
+    err "[red]zig not found".bb
+    err "  forge requires a working installation of zig"
+    err "  see: https://ziglang.org/download/"
     quit 1

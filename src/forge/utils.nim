@@ -37,8 +37,8 @@ proc checkTargets*(targets: seq[string]) =
       unknownTargets.add target
 
   if unknownTargets.len != 0:
-    termErr &"unknown target(s): " & unknownTargets.join(", ")
-    termEcho "must be one of:"
+    err &"unknown target(s): " & unknownTargets.join(", ")
+    info "must be one of:"
     stderr.writeLine knownTargets.columns
     quit 1
 
@@ -78,7 +78,7 @@ proc inferCpu*(t: Triplet): string =
   # riscv64, esp, wasm32, e2k, loongarch64
 
   # NOTE: I don't know what the _be eb means but if nim
-  # can't handle them then maybe an error would be better
+  # can't handle them then maybe an err would be better
   result =
     case t.cpu
     of "x86_64":
@@ -107,7 +107,7 @@ proc formatDirName*(
   try:
     result = formatstr % ["name", name, "version", vsn, "target", target]
   except ValueError as e:
-    termErrQuit e.msg
+    errQuit e.msg
 
   if result == "":
-    termErrQuit &"error processing formatstr: {formatstr}"
+    errQuit &"err processing formatstr: {formatstr}"

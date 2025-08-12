@@ -22,14 +22,14 @@ proc targets() =
   ## show available targets
   zigExists()
   let targetList = zigTargets()
-  termEcho "[bold green]available targets:".bb
+  info "[bold green]available targets:".bb
   stderr.writeLine targetList.columns
 
 proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string]) =
   ## compile with zig cc
   zigExists()
   if args.len == 0:
-    termErrQuit "expected additional arguments i.e. -- -d:release src/main.nim"
+    errQuit "expected additional arguments i.e. -- -d:release src/main.nim"
 
   checkTargets(@[target])
 
@@ -64,9 +64,9 @@ proc release(
     newConfig(target, bin, outdir, format, name, version, nimble, configFile, noConfig)
 
   if cfg.targets.len == 0:
-    termErrQuit "expected at least 1 target"
+    errQuit "expected at least 1 target"
   if cfg.bins.len == 0:
-    termErrQuit "expected at least 1 bin"
+    errQuit "expected at least 1 bin"
 
   checkTargets(cfg.targets.keys.toSeq())
 
@@ -74,13 +74,13 @@ proc release(
     cfg.showConfig
 
   if dryrun:
-    termEcho "[bold blue]dry run...see below for commands".bb
+    info "[bold blue]dry run...see below for commands".bb
 
   let
     baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
     rest = parseArgs(args)
 
-  termEcho fmt"[bold yellow]compiling {cfg.bins.len} binaries for {cfg.targets.len} targets".bb
+  info fmt"[bold cyan]compiling {cfg.bins.len} binaries for {cfg.targets.len} targets".bb
 
   for t, tArgs in cfg.targets:
     for b, bArgs in cfg.bins:
@@ -104,11 +104,11 @@ proc release(
         stderr.writeLine cmd
       else:
         if verbose:
-          termEcho fmt"[bold]cmd[/]: {cmd}".bb
+          info fmt"[bold]cmd[/]: {cmd}".bb
         let errCode = execCmd cmd
         if errCode != 0:
-          termErr "cmd: ", cmd
-          termErrQuit &"exited with code {errCode} see above for error"
+          err "cmd: ", cmd
+          errQuit &"exited with code {errCode} see above for err"
 
 when isMainModule:
   import hwylterm/hwylcli

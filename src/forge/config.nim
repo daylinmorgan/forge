@@ -35,7 +35,7 @@ config =
   for bin, args in c.bins:
     addline addNameArgs(bin, args)
 
-  termEcho lines
+  info lines
 
 proc loadConfigFile*(f: string, load_targets: bool, load_bins: bool): ForgeConfig =
   let dict = loadConfig(f)
@@ -76,8 +76,9 @@ proc findNimbleFile(): string =
   # nimble will probably prevent this,
   # but not sure about atlas or bespoke builds
   if candidates.len > 1:
-    echo "found multiple nimble files: " & candidates.join(", ")
-    echo "cannot infer name or version"
+    # should this be an errQuit?
+    warn "found multiple nimble files: " & candidates.join(", ")
+    warn "cannot infer name or version"
   elif candidates.len == 1:
     return candidates[0]
 
