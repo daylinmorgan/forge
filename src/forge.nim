@@ -110,6 +110,7 @@ proc release(
           err "cmd: ", cmd
           errQuit &"exited with code {errCode} see above for err"
 
+
 when isMainModule:
   import hwylterm/hwylcli
   const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
@@ -133,7 +134,8 @@ when isMainModule:
         args seq[string]
       flags:
         ^[shared]
-        t|target(string, "target triple")
+        t|target(string, "target triple"):
+          settings Required
       run:
         cc(target, `dry-run`, nimble, args)
 
