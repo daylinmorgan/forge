@@ -114,6 +114,8 @@ proc newConfig*(
   let nimbleFile = findNimbleFile()
 
   if configFile.fileExists and not noConfig:
+    if Path(configFile).splitFile.ext in [".ini", ".cfg"]:
+      warn "ini format config may be deprecated in a future release"
     result = loadConfigFile(configFile, targets.len == 0, bins.len == 0)
   else:
     # no seg faults here...
