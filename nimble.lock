@@ -3,12 +3,12 @@
   "packages": {
     "hwylterm": {
       "version": "0.1.0",
-      "vcsRevision": "1324ba54151eeb6c2a28d8236854ccfb9885b530",
+      "vcsRevision": "8edaddd2d14a206d421b6f7fdf8378586fbcf0ef",
       "url": "https://github.com/daylinmorgan/hwylterm",
       "downloadMethod": "git",
       "dependencies": [],
       "checksums": {
-        "sha1": "b5c3cc2e8ed4ce5514750d1216d0816cd4ef0dc7"
+        "sha1": "9af44f8114032f59125ec4c0054489355a6d6b26"
       }
     }
   },
