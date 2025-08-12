@@ -1,4 +1,4 @@
-import std/[parsecfg, tables, os, strutils, strformat]
+import std/[parsecfg, tables, paths, os, strutils, strformat]
 import term
 
 type ForgeConfig* = object
@@ -65,7 +65,7 @@ proc inferName(s: string, nimbleFile: string): string =
 
 proc findNimbleFile(): string =
   var candidates: seq[string]
-  for kind, path in walkDir(getCurrentDir(), relative = true):
+  for kind, path in walkDir(os.getCurrentDir(), relative = true):
     case kind
     of pcFile, pcLinkToFile:
       if path.endsWith(".nimble"):
