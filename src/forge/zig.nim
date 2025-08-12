@@ -1,9 +1,19 @@
-import std/[json, os, osproc]
+import std/[json, os, osproc, strscans, strutils]
 import term
 
+template `!`(cond: bool, msg: string) =
+  if not cond:
+    quit msg
+
 proc zigTargets*(): seq[string] =
-  let (output, _) = execCmdEx "zig targets"
-  parseJson(output)["libc"].to(seq[string])
+  # andrew's dogfooding forced me to parse zon >:(
+  let (targets, _ ) = execCmdEx "zig targets"
+  let (ok, _, libcBlock,_)  = scanTuple(targets, "$*.libc = .{$*}$*$.")
+  ok!"failed to extract libc block from `zig targets`"
+  for line in libcBlock.strip().splitLines():
+    let (ok, triple) = scanTuple(line.strip(),"\"$*\",")
+    ok!("failed to parse triple from `zig targets`: " & line)
+    result.add triple
 
 # based on https://github.com/enthus1ast/zigcc
 template callZig*(zigCmd: string) =
