@@ -118,6 +118,7 @@ when isMainModule:
   hwylCli:
     name "forge"
     ... "cross-compile nim binaries with [b yellow]zig[/]"
+    settings ShowHelp
     V vsn
     flags:
       [shared]
