@@ -1,4 +1,5 @@
 import std/[os, osproc, sequtils, strformat, strutils]
+import hwylterm/hwylcli
 import forge/[config, utils, term, zig]
 
 proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
@@ -10,8 +11,8 @@ proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
   result &=
     @[
       "--cc:clang",
-      &"--clang.exe='forgecc'",
-      &"--clang.linkerexe='forgecc'",
+      fmt"--clang.exe='{getAppFilename()}'",
+      fmt"--clang.linkerexe='{getAppFilename()}'",
       # &"--passC:\"-target {target} -fno-sanitize=undefined\"",
       &"--passC:'-target {triplet}'",
       # &"--passL:\"-target {target} -fno-sanitize=undefined\"",
@@ -107,73 +108,93 @@ proc release(
         errQuit &"exited with code {errCode} see above for err"
 
 
-when isMainModule:
-  import hwylterm/hwylcli
-  const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
+const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
+const forgeArgs= ["+cc", "+targets", "+release", "+r", "-h", "--help", "-V", "--version"]
 
-  hwylCli:
-    name "forge"
-    ... "cross-compile nim binaries with [b yellow]zig[/]"
-    settings ShowHelp
-    V vsn
+let params = commandLineParams()
+if params.len > 0 and params[0] notin forgeArgs:
+  let zigParams =
+    if params[0] == "+zig": params[1..^1]
+    else: @["cc"] & params
+  quit callZig(zigParams)
+
+
+hwylCli:
+  name "forge"
+  ... """
+  cross-compile nim binaries with [b yellow]zig[/]
+ 
+  example usages:
+    forge +release
+    forge +zig version
+    forge -o hello hello.c
+    forge +cc --target x86_64-linux-musl -- -d:release src/forge.nim
+
+  if forge is called with something besides its subcommands it falls back to `zig cc`
+  """
+  settings ShowHelp
+  V vsn
+  flags:
+    [shared]
+    n|`dry-run` "show command instead of executing"
+    nimble "use nimble as base command for compiling"
+  subcommands:
+    ["+targets"]
+    ... "show available targets"
+    run: targets()
+
+    ["+cc"]
+    ...  "compile a single binary with zig cc"
+    positionals:
+      args seq[string]
     flags:
-      [shared]
-      n|`dry-run` "show command instead of executing"
-      nimble "use nimble as base command for compiling"
-    subcommands:
-      [targets]
-      ... "show available targets"
-      run: targets()
+      ^[shared]
+      t|target(string, "target triple"):
+        settings Required
+    run:
+      cc(target, `dry-run`, nimble, args)
 
-      [cc]
-      ...  "compile with zig cc"
-      positionals:
-        args seq[string]
-      flags:
-        ^[shared]
-        t|target(string, "target triple"):
-          settings Required
-      run:
-        cc(target, `dry-run`, nimble, args)
+    ["+release"]
+    ... """
+    generate release assets for n>=1 targets
 
-      [release]
-      ... """
-      generate release assets for n>=1 targets
+    format argument:
+      format is a template string used for each target directory
+      available fields are [b i]name, version, target[/]
 
-      format argument:
-        format is a template string used for each target directory
-        available fields are [b i]name, version, target[/]
+    if name or version are not specified they will be inferred from the local .nimble file
+    """
+    alias "+r"
+    positionals:
+      args seq[string]
+    flags:
+      ^[shared]
+      v|verbose "enable verbose"
+      # hwylterm should support @[] syntax and try to infer type to change call
+      t|target(newSeq[string](), seq[string], "set target, may be repeated")
+      bin(newSeq[string](), seq[string], "set bin, may be repeated")
+      format("${name}-v${version}-${target}", string, "set format")
+      `config-file`(chooseConfig(), string, "path to config")
+      `no-config` "ignore config file"
+      o|outdir("dist", string, "path to output dir")
+      name(string, "set name, inferred otherwise")
+      version(string, "set version, inferred otherwise")
+    run:
+      release(
+          target,
+          bin,
+          args,
+          outdir,
+          format,
+          name,
+          version,
+          `dry-run`,
+          nimble,
+          `config-file`,
+          `no-config`,
+          verbose,
+      )
 
-      if name or version are not specified they will be inferred from the local .nimble file
-      """
-      alias r
-      positionals:
-        args seq[string]
-      flags:
-        ^[shared]
-        v|verbose "enable verbose"
-        # hwylterm should support @[] syntax and try to infer type to change call
-        t|target(newSeq[string](), seq[string], "set target, may be repeated")
-        bin(newSeq[string](), seq[string], "set bin, may be repeated")
-        format("${name}-v${version}-${target}", string, "set format")
-        `config-file`(chooseConfig(), string, "path to config")
-        `no-config` "ignore config file"
-        o|outdir("dist", string, "path to output dir")
-        name(string, "set name, inferred otherwise")
-        version(string, "set version, inferred otherwise")
-      run:
-        release(
-            target,
-            bin,
-            args,
-            outdir,
-            format,
-            name,
-            version,
-            `dry-run`,
-            nimble,
-            `config-file`,
-            `no-config`,
-            verbose,
-        )
-
+    # added so it's included in overall CLI help documentation
+    ["+zig"]
+    ... "invoke the zig binary used by forge"

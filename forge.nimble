@@ -3,7 +3,7 @@ author        = "Daylin Morgan"
 description   = "build nim binaries for all the platforms"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["forge", "forgecc"]
+bin           = @["forge"]
 binDir        = "bin"
 
 
