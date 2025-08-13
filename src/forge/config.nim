@@ -286,8 +286,9 @@ proc newConfig*(
     else:
       errQuit "unexpected config file format: ", ext, "supported formats: ini, cfg, usu"
 
-  else:
+  if result.targets.settings == nil:
     new result.targets.settings
+  if result.bins.settings == nil:
     new result.bins.settings
 
   result.nimble = result.nimble or nimble
