@@ -7,7 +7,7 @@ A basic toolchain to forge (cross-compile) your multi-platform `nim` binaries.
 ## Why?
 
 `Nim` is a great language and the code is as portable as any other code written in C.
-But who wants to manage C toolchains or CI/CD DSL's to cross-compile your code into easily sharable native executable binaries
+But who wants to manage C toolchains or CI/CD DSL's to cross-compile your code into easily shareable native executable binaries
 
 ## Installation
 
@@ -18,36 +18,46 @@ is done using a thin wrapper around `zig cc`.
 > Future versions may use an automated/isolated `zig` installation.
 
 ```sh
-nimble install https://github.com/daylinmorgan/forge
+nimble install forge
 ```
 
 ## Usage
 
-`Forge` provide two key methods to compile your `nim` source `forge cc` and `forge release`.
+`forge` provides two key methods to compile your `nim` source `forge +cc` and `forge +release`.
 
 
-### `forge cc`
+### `forge +cc`
 
-To compile a single binary for a platform you can use `forge cc`.
+To compile a single binary for a platform you can use `forge +cc`.
 
 Example:
 
 ```sh
-forge cc --target x86_64-linux-musl -- -d:release src/forge.nim -o:forge
+forge +cc --target x86_64-linux-musl -- -d:release src/forge.nim -o:forge
 ```
 
-### `forge release`
+### `forge +release`
 
 This command is useful for generating many compiled binaries like you may be accustomed to seeing from `go` or `rust` cli's.
-`Forge release` will make attempts to infer many values based on the assumption that it's
+`forge +release` will make attempts to infer many values based on the assumption that it's
 likely run from the root directory of a `nim` project with a `<project>.nimble`
 
-You can either specify all commands on the CLI or use a config file.
+You can either specify all commands on the CLI or use a [config](#configuration) file.
+
+### using zig
+
+`forge` is a wrapper around `zig` and `zig cc`.
+If it's called without any of it's known subcommands (all prefixed by "+") then it will fall back to `zig cc`.
+This way we can deploy a single self-invoking binary since the `clang.exe` specified to `nim` can't have subcommands.
+
+To invoke the same `zig` used by `forge` directly with the `cc` command, see `forge +zig`.
+
+### configuration
 
 Example:
 
 ```sh
-forge release --target,=x86_64-linux-musl,x86_64-macos-none --bin src/forge.nim
+forge +release --target,=x86_64-linux-musl,x86_64-macos-none --bin src/forge.nim
 ```
 
 Result:
@@ -84,30 +94,7 @@ src/forgecc = "--opt:size" # use a custom flag for this binary
 
 Example:
 ```sh
-forge release --verbose --dryrun
-```
-
-Output:
-```
-forge release -V --dryrun
-forge || config =
-| nimble  true
-| outdir  forge-dist
-| format  ${name}-${target}
-| version 2023.1001
-| targets:
-|   x86_64-linux-musl|--debugInfo:on
-|   x86_64-linux-gnu
-| bins:
-|   src/forge
-|   src/forgecc|--opt:size
-forge || dry run...see below for commands
-forge || compiling 2 binaries for 2 targets
-nimble c --cpu:amd64 --os:Linux --cc:clang --clang.exe='forgecc' --clang.linkerexe='forgecc' --passC:'-target x86_64-linux-musl' --passL:'-target x86_64-linux-musl' -d:release --outdir:'dist/forge-x86_64-linux-musl' --debugInfo:on src/forge
-nimble c --cpu:amd64 --os:Linux --cc:clang --clang.exe='forgecc' --clang.linkerexe='forgecc' --passC:'-target x86_64-linux-musl' --passL:'-target x86_64-linux-musl' -d:release --outdir:'dist/forge-x86_64-linux-musl' --debugInfo:on --opt:size src/forgecc
-nimble c --cpu:amd64 --os:Linux --cc:clang --clang.exe='forgecc' --clang.linkerexe='forgecc' --passC:'-target x86_64-linux-gnu' --passL:'-target x86_64-linux-gnu' -d:release --outdir:'dist/forge-x86_64-linux-gnu' src/forge
-nimble c --cpu:amd64 --os:Linux --cc:clang --clang.exe='forgecc' --clang.linkerexe='forgecc' --passC:'-target x86_64-linux-gnu' --passL:'-target x86_64-linux-gnu' -d:release --outdir:'dist/forge-x86_64-linux-gnu' --opt:size src/forgecc
-
+forge +release --verbose --dryrun
 ```
 
 ## Acknowledgements
