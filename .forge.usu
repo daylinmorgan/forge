@@ -10,15 +10,10 @@
     aarch64-macos-none
     aarch64-linux-gnu
   )
-  :settings (
-    :x86_64-linux-musl (:args "--opt:speed")
-    :x86-linux-gnu     (:format "${name}-x86_64-linux-not-musl")
-  )
 )
 
 :bins (
-  :paths (src/forge src/forgecc)
-  :settings (
-    :src/forge (:args "--opt:size") 
+  :paths (
+    src/forge
   )
 )
