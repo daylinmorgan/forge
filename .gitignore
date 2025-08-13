@@ -4,3 +4,8 @@
 nimbledeps
 nimble.develop
 nimble.paths
+
+src/**
+!src/*.nim
+!src/forge/
+!src/forge/*.nim
