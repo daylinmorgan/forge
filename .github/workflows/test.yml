@@ -1,0 +1,32 @@
+name: Test by Dogfood
+
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-artifact:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: jiro4989/setup-nim-action@v2
+      - uses: goto-bus-stop/setup-zig@v2
+
+      - name: Bootstrap with nimble
+        run: |
+          nimble install -Y
+
+      - name: Generate all build artifacts
+        run: |
+          nimble setup -l
+          forge +release --verbose
