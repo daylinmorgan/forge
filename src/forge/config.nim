@@ -334,16 +334,26 @@ func params(c: Config, triple: string, path: string): Params =
     if p.args != "":
       result.args.add " " & p.args & " "
 
-iterator builds*(c: Config): tuple[triple: string, bin: string, params: Params] =
+type
+  Build* = object
+    triple*, path*: string
+    params*: Params
+
+iterator builds*(c: Config): Build =
   for t in c.targets.triples:
     for b in c.bins.paths:
-      yield (t, b, c.params(t, b))
+      yield Build(triple: t, path: b, params: c.params(t, b))
 
 func getTriples*(c: Config): seq[string] {.inline.} =
   c.targets.triples.toSeq()
 
 func buildPlan*(c: Config): string =
   fmt"compiling {c.bins.paths.len} binaries for {c.targets.triples.len} targets"
+
+func baseCmd*(c: Config): string =
+  if c.nimble: "nimble"
+  else: "nim"
+
 
 proc chooseConfig*(): string =
   ## select a default file from the current directory

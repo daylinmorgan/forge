@@ -1,4 +1,4 @@
-import std/[os, osproc, strformat, strutils]
+import std/[os, osproc, strformat, strutils, sequtils]
 import hwylterm/hwylcli
 import forge/[config, term, zig]
 
@@ -51,7 +51,6 @@ proc filterStr(os, arch: seq[string]): string =
     result.add if arch.len == 1: arch[0]
                else: arch.join(", ")
 
-import std/sequtils
 proc targets(os: seq[string], cpu: seq[string]) =
   ## show available targets
   zigExists()
@@ -81,6 +80,24 @@ proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[st
     stderr.writeLine cmd
   else:
     quit(execCmd cmd)
+
+proc outDirFlag(cfg: Config, build: Build): string =
+  # pay attention to quotes here
+  result.add "--outdir:'"
+  result.add (cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple))
+  result.add "'"
+
+proc compileCmd(cfg: Config, build: Build, rest: seq[string]): string =
+  var cmd: seq[string]
+  cmd.add cfg.baseCmd
+  cmd.add "c"
+  cmd.add genFlags(build.triple, rest)
+  cmd.add "-d:release"
+  cmd.add rest
+  cmd.add cfg.outDirFlag(build)
+  cmd.add build.params.args
+  cmd.add build.path
+  cmd.join(" ")
 
 proc release(
     target: seq[string] = @[],
@@ -113,36 +130,20 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
-  let
-    baseCmd = if nimble or cfg.nimble: "nimble" else: "nim"
-    rest = parseArgs(args)
+  let rest = parseArgs(args)
 
   info bbfmt"[bold cyan]{cfg.buildPlan}"
 
-  for (triple, path, params) in cfg.builds:
-    var cmdParts: seq[string] = @[]
-    let outFlag =
-      &"--outdir:'" &
-      (cfg.outdir / formatDirName(params.format, cfg.name, cfg.version, triple)) & "'"
+  for build in cfg.builds:
+    let cmd = cfg.compileCmd(build, rest)
+    if dryrun or verbose:
+      info fmt"[bold]cmd[/]: {cmd}".bb
+      if dryrun: continue
 
-    cmdParts &= @[baseCmd, "c"]
-    cmdParts.add genFlags(triple, rest)
-    cmdParts.add "-d:release"
-    cmdParts.add rest
-    cmdParts.add outFlag
-    cmdParts.add params.args
-    cmdParts.add path
-
-    let cmd = cmdParts.join(" ")
-    if dryrun:
-      stderr.writeLine cmd
-    else:
-      if verbose:
-        info fmt"[bold]cmd[/]: {cmd}".bb
-      let errCode = execCmd cmd
-      if errCode != 0:
-        err "cmd: ", cmd
-        errQuit &"exited with code {errCode} see above for err"
+    let errCode = execCmd cmd
+    if errCode != 0:
+      err "cmd: ", cmd
+      errQuit &"exited with code {errCode} see above for error"
 
 
 const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
