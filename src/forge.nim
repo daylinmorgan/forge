@@ -33,12 +33,12 @@ proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
   result &=
     @[
       "--cc:clang",
-      fmt"--clang.exe='{getAppFilename()}'",
-      fmt"--clang.linkerexe='{getAppFilename()}'",
+      "--clang.exe=\"" & getAppFilename().quoteShell() & "\"",
+      "--clang.linkerexe=\"" & getAppFilename().quoteShell() & "\"",
       # &"--passC:\"-target {target} -fno-sanitize=undefined\"",
-      &"--passC:'-target {triplet}'",
+      fmt("--passC:\"-target {triplet}\""),
       # &"--passL:\"-target {target} -fno-sanitize=undefined\"",
-      &"--passL:'-target {triplet}'",
+      fmt("--passL:\"-target {triplet}\""),
     ]
 
 proc filterStr(os, arch: seq[string]): string =
@@ -84,7 +84,7 @@ proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[st
 proc outDirFlag(cfg: Config, build: Build): string =
   # pay attention to quotes here
   result.add "--outdir:'"
-  result.add (cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple))
+  result.add (cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple)).quoteShell()
   result.add "'"
 
 proc compileCmd(cfg: Config, build: Build, rest: seq[string]): string =
@@ -95,8 +95,10 @@ proc compileCmd(cfg: Config, build: Build, rest: seq[string]): string =
   cmd.add "-d:release"
   cmd.add rest
   cmd.add cfg.outDirFlag(build)
-  cmd.add build.params.args
-  cmd.add build.path
+  if build.params.args.len > 0:
+    cmd.add build.params.args
+  cmd.add build.path.normalizedPath()
+  echo cmd
   cmd.join(" ")
 
 proc release(
