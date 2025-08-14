@@ -1,9 +1,31 @@
-import std/[os, osproc, sequtils, strformat, strutils]
+import std/[os, osproc, strformat, strutils]
 import hwylterm/hwylcli
-import forge/[config, utils, term, zig]
+import forge/[config, term, zig]
+
+template parseArgs*(args: seq[string]): seq[string] =
+  if args.len == 0:
+    args
+  elif args[0] == "c":
+    args[1 ..^ 1]
+  else:
+    args
+
+proc formatDirName*(
+    formatstr: string, name: string, version: string, target: string
+): string =
+  var vsn = version
+  if ("v$version" in formatstr or "v${version}" in formatstr) and vsn.startsWith("v"):
+    vsn = vsn[1 ..^ 1]
+  try:
+    result = formatstr % ["name", name, "version", vsn, "target", target]
+  except ValueError as e:
+    errQuit e.msg
+
+  if result == "":
+    errQuit &"err processing formatstr: {formatstr}"
 
 proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
-  let triplet = parseTriplet(target)
+  let triplet = parseTriple(target)
 
   addFlag "cpu"
   addFlag "os"
@@ -19,12 +41,27 @@ proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
       &"--passL:'-target {triplet}'",
     ]
 
-proc targets() =
+proc filterStr(os, arch: seq[string]): string =
+  if os.len > 0:
+    result.add $bb" [b]os[/]: "
+    result.add if os.len == 1: os[0]
+               else: os.join(", ")
+  if arch.len > 0:
+    result.add $bb" [b]arch[/]: "
+    result.add if arch.len == 1: arch[0]
+               else: arch.join(", ")
+
+import std/sequtils
+proc targets(os: seq[string], cpu: seq[string]) =
   ## show available targets
   zigExists()
-  let targetList = zigTargets()
-  info "[bold green]available targets:".bb
-  stderr.writeLine targetList.columns
+  if os.len > 0 or cpu.len > 0:
+    info "[bold green]filter[/]".bb & filterStr(os, cpu)
+  let targets = getTargets(os, cpu)
+  if targets.len == 0:
+    info "no targets matched filter"
+  else:
+    info "available targets: \n" & targets.columns()
 
 proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string]) =
   ## compile with zig cc
@@ -141,7 +178,10 @@ hwylCli:
   subcommands:
     ["+targets"]
     ... "show available targets"
-    run: targets()
+    flags:
+      os(seq[string], "filter by os")
+      cpu(seq[string], "filter by cpu")
+    run: targets(os, cpu)
 
     ["+cc"]
     ...  "compile a single binary with zig cc"
