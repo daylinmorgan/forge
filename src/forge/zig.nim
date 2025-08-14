@@ -2,8 +2,7 @@ import std/[os, osproc, strscans, strutils]
 import term
 
 template `!`(cond: bool, msg: string) =
-  if not cond:
-    quit msg
+  if not cond: errQuit msg
 
 proc zigTargets*(): seq[string] =
   # andrew's dogfooding forced me to parse zon >:(
@@ -17,11 +16,11 @@ proc zigTargets*(): seq[string] =
     result.add triple
 
 proc zigExists*() =
-  if (findExe "zig") == "":
-    err "[red]zig not found".bb
-    err "  forge requires a working installation of zig"
-    err "  see: https://ziglang.org/download/"
-    quit 1
+  let ok = findExe("zig") != ""
+  ok!($bb"[red]zig not found" & "\n" &  """
+forge requires a working installation of zig
+see: https://ziglang.org/download/""".indent(2)
+  )
 
 proc callZig*(params: varargs[string]): int  =
   zigExists()
