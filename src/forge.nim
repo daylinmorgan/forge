@@ -99,9 +99,8 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
     quit forgeCompile(baseCmd, compileArgs, backend)
 
 proc outDirFlag(cfg: Config, build: Build): string =
-  # pay attention to quotes here
   result.add "--outdir:"
-  result.add (cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple)).quoteShell()
+  result.add cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple)
 
 proc newCompileArgs(cfg: Config, backend: string, build: Build, rest: seq[string]): seq[string] =
   result.add backend
