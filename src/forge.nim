@@ -233,7 +233,6 @@ hwylCli:
       ^[shared]
       ^[single]
     run:
-      stderr.writeLine "support for zig c++ is experimental, please report any issues"
       compile(target, `dry-run`, nimble, args, backend = "cpp")
 
     ["+release"]
