@@ -1,9 +1,10 @@
 import std/[parsecfg, paths, os, sequtils, sets, strutils, strformat, tables]
-import term
 import usu
 from usu/parser import UsuParserError, UsuNodeKind
 
-export tables
+import ./term
+
+export tables, sets
 
 type ForgeConfig* = object
   targets*: OrderedTableRef[string, string]
@@ -19,17 +20,17 @@ type
     args*: string
     format*: string
   Settings = OrderedTableRef[string, Params]
-  Targets = object
-    triples: HashSet[string]
-    settings: Settings
+  Targets* = object
+    triples*: HashSet[string]
+    settings*: Settings
   Bins = object
-    paths: HashSet[string]
-    settings: Settings
+    paths*: HashSet[string]
+    settings*: Settings
   Config* = object
     name*, version*, format*, outdir*: string
     nimble*: bool
-    targets: Targets
-    bins: Bins
+    targets*: Targets
+    bins*: Bins
 
 proc showConfig*(c: ForgeConfig) {.deprecated.} =
   var lines: string = ""
@@ -323,7 +324,7 @@ func getParams(x: Targets | Bins, item: string): Params =
   if item in x.settings:
     result = x.settings[item]
 
-func params(c: Config, triple: string, path: string): Params =
+func params*(c: Config, triple: string, path: string): Params =
   result.format = c.format
   let tripleParams = c.targets.getParams(triple)
   let binParams = c.bins.getParams(path)
@@ -333,16 +334,6 @@ func params(c: Config, triple: string, path: string): Params =
       result.format = p.format
     if p.args != "":
       result.args.add " " & p.args & " "
-
-type
-  Build* = object
-    triple*, path*: string
-    params*: Params
-
-iterator builds*(c: Config): Build =
-  for t in c.targets.triples:
-    for b in c.bins.paths:
-      yield Build(triple: t, path: b, params: c.params(t, b))
 
 func getTriples*(c: Config): seq[string] {.inline.} =
   c.targets.triples.toSeq()
@@ -395,6 +386,3 @@ when isMainModule:
 """
   let c = parseUsu(configStr).to(Config)
   echo c.params("x86_64-linux-musl", "src/forge")
-  for triple, path, params in c.builds:
-    echo fmt"{triple=}, {path=}, {params=}"
-    echo params.format

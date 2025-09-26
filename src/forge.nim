@@ -1,6 +1,6 @@
 import std/[os, osproc, strformat, strutils, sequtils, strtabs]
 import hwylterm/hwylcli
-import forge/[config, term, zig]
+import forge/lib
 
 template parseArgs*(args: seq[string]): seq[string] =
   if args.len == 0:
@@ -9,39 +9,6 @@ template parseArgs*(args: seq[string]): seq[string] =
     args[1 ..^ 1]
   else:
     args
-
-proc formatDirName*(
-    formatstr: string, name: string, version: string, target: string
-): string =
-  var vsn = version
-  if ("v$version" in formatstr or "v${version}" in formatstr) and vsn.startsWith("v"):
-    vsn = vsn[1 ..^ 1]
-  try:
-    result = formatstr % ["name", name, "version", vsn, "target", target]
-  except ValueError as e:
-    errQuit e.msg
-
-  if result == "":
-    errQuit &"err processing formatstr: {formatstr}"
-
-proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
-  let triplet = parseTriple(target)
-
-  addFlag "cpu"
-  addFlag "os"
-
-  result &=
-    @[
-      "--cc:clang",
-      "--clang.exe=" & getAppFilename(),
-      "--clang.linkerexe=" & getAppFilename() ,
-      "--clang.cpp.exe=" & getAppFilename(),
-      "--clang.cpp.linkerexe=" & getAppFilename() ,
-      # &"--passC:\"-target {target} -fno-sanitize=undefined\"",
-      fmt("--passC=-target {triplet}"),
-      # &"--passL:\"-target {target} -fno-sanitize=undefined\"",
-      fmt("--passL=-target {triplet}"),
-    ]
 
 proc filterStr(os, arch: seq[string]): string =
   if os.len > 0:
@@ -98,24 +65,10 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
   else:
     quit forgeCompile(baseCmd, compileArgs, backend)
 
-proc outDirFlag(cfg: Config, build: Build): string =
-  result.add "--outdir:"
-  result.add cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple)
-
-proc newCompileArgs(cfg: Config, backend: string, build: Build, rest: seq[string]): seq[string] =
-  result.add backend
-  result.add genFlags(build.triple, rest)
-  result.add "-d:release"
-  result.add rest
-  result.add cfg.outDirFlag(build)
-  if build.params.args.len > 0:
-    result.add build.params.args
-  result.add build.path.normalizedPath()
-
 proc release(
     target: seq[string] = @[],
     bin: seq[string] = @[],
-    args: seq[string],
+    posArgs: seq[string], # change name to posArgs
     outdir: string = "dist",
     format: string = "",
     name: string = "",
@@ -144,12 +97,12 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
-  let rest = parseArgs(args)
+  let rest = parseArgs(posArgs)
 
   info bbfmt"[bold cyan]{cfg.buildPlan}"
 
   for build in cfg.builds:
-    let compileArgs = newCompileArgs(cfg, backend, build, rest)
+    let compileArgs = build.args(backend, rest)
     let cmd = (@[cfg.baseCmd] & compileArgs).join(" ")
     if dryrun or verbose:
       info fmt"[bold]cmd[/]: {cmd}".bb

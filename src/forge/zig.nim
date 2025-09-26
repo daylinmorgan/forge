@@ -66,9 +66,9 @@ macro addFlag*(arg: untyped): untyped =
 
 proc inferOs*(t: Triple): string =
   # Available options are:
-  # Available options are: DOS, Windows, OS2, Linux, MorphOS, SkyOS, Solaris, Irix, NetBSD, FreeBSD, OpenBSD,
-  # DragonFly, CROSSOS, AIX, PalmOS, QNX, Amiga, Atari, Netware, MacOS, MacOSX, iOS, Haiku, Android, VxWorks,
-  # Genode, JS, NimVM, Standalone, NintendoSwitch, FreeRTOS, Zephyr, NuttX, Any
+  #  DOS, Windows, OS2, Linux, MorphOS, SkyOS, Solaris, Irix, NetBSD, FreeBSD, OpenBSD,
+  #  DragonFly, CROSSOS, AIX, PalmOS, QNX, Amiga, Atari, Netware, MacOS, MacOSX, iOS, Haiku, Android, VxWorks,
+  #  Genode, JS, NimVM, Standalone, NintendoSwitch, FreeRTOS, Zephyr, NuttX, Any
   #
   # there is no way most of those actualy compile with Nim 2
   case t.os
@@ -87,10 +87,10 @@ proc inferOs*(t: Triple): string =
 
 proc inferCpu*(t: Triple): string =
   # Available options are:
-  # i386, m68k, alpha, powerpc, powerpc64, powerpc64el, sparc,
-  # vm, hppa, ia64, amd64, mips, mipsel, arm, arm64, js,
-  # nimvm, avr, msp430, sparc64, mips64, mips64el, riscv32,
-  # riscv64, esp, wasm32, e2k, loongarch64
+  #  i386, m68k, alpha, powerpc, powerpc64, powerpc64el, sparc,
+  #  vm, hppa, ia64, amd64, mips, mipsel, arm, arm64, js,
+  #  nimvm, avr, msp430, sparc64, mips64, mips64el, riscv32,
+  #  riscv64, esp, wasm32, e2k, loongarch64
 
   # NOTE: I don't know what the _be eb means but if nim
   # can't handle them then maybe an err would be better
