@@ -1,4 +1,4 @@
-import std/[os, osproc, strformat, strutils, sequtils]
+import std/[os, osproc, strformat, strutils, sequtils, strtabs]
 import hwylterm/hwylcli
 import forge/[config, term, zig]
 
@@ -33,12 +33,14 @@ proc genFlags(target: string, args: seq[string] = @[]): seq[string] =
   result &=
     @[
       "--cc:clang",
-      "--clang.exe=\"" & getAppFilename().quoteShell() & "\"",
-      "--clang.linkerexe=\"" & getAppFilename().quoteShell() & "\"",
+      "--clang.exe=" & getAppFilename(),
+      "--clang.linkerexe=" & getAppFilename() ,
+      "--clang.cpp.exe=" & getAppFilename(),
+      "--clang.cpp.linkerexe=" & getAppFilename() ,
       # &"--passC:\"-target {target} -fno-sanitize=undefined\"",
-      fmt("--passC:\"-target {triplet}\""),
+      fmt("--passC=-target {triplet}"),
       # &"--passL:\"-target {target} -fno-sanitize=undefined\"",
-      fmt("--passL:\"-target {triplet}\""),
+      fmt("--passL=-target {triplet}"),
     ]
 
 proc filterStr(os, arch: seq[string]): string =
@@ -62,7 +64,22 @@ proc targets(os: seq[string], cpu: seq[string]) =
   else:
     info "available targets: \n" & targets.columns()
 
-proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string]) =
+proc envWithBackend(backend: string): StringTableRef =
+  result = newStringTable(mode = modeCaseSensitive)
+  for k, v in envPairs():
+    result[k] = v
+  result["FORGE_BACKEND"] = backend
+
+proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): int =
+  let p = startProcess(
+    baseCmd,
+    args = args,
+    options = {poUsePath, poParentStreams},
+    env = envWithBackend(backend)
+  )
+  result = p.waitForExit()
+
+proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], backend = "cc") =
   ## compile with zig cc
   zigExists()
   if args.len == 0:
@@ -74,32 +91,27 @@ proc cc(target: string, dryrun: bool = false, nimble: bool = false, args: seq[st
     rest = parseArgs(args)
     ccArgs = genFlags(target, rest)
     baseCmd = if nimble: "nimble" else: "nim"
-    cmd = (@[baseCmd] & @["c"] & ccArgs & rest).join(" ")
+    compileArgs = @[backend] & ccArgs & rest
 
   if dryrun:
-    stderr.writeLine cmd
+    stderr.writeLine (@[baseCmd] & @[backend] & ccArgs & rest).join(" ")
   else:
-    quit(execCmd cmd)
+    quit forgeCompile(baseCmd, compileArgs, backend)
 
 proc outDirFlag(cfg: Config, build: Build): string =
   # pay attention to quotes here
-  result.add "--outdir:'"
+  result.add "--outdir:"
   result.add (cfg.outdir / formatDirName(build.params.format, cfg.name, cfg.version, build.triple)).quoteShell()
-  result.add "'"
 
-proc compileCmd(cfg: Config, build: Build, rest: seq[string]): string =
-  var cmd: seq[string]
-  cmd.add cfg.baseCmd
-  cmd.add "c"
-  cmd.add genFlags(build.triple, rest)
-  cmd.add "-d:release"
-  cmd.add rest
-  cmd.add cfg.outDirFlag(build)
+proc newCompileArgs(cfg: Config, backend: string, build: Build, rest: seq[string]): seq[string] =
+  result.add backend
+  result.add genFlags(build.triple, rest)
+  result.add "-d:release"
+  result.add rest
+  result.add cfg.outDirFlag(build)
   if build.params.args.len > 0:
-    cmd.add build.params.args
-  cmd.add build.path.normalizedPath()
-  echo cmd
-  cmd.join(" ")
+    result.add build.params.args
+  result.add build.path.normalizedPath()
 
 proc release(
     target: seq[string] = @[],
@@ -114,6 +126,7 @@ proc release(
     configFile: string = ".forge.cfg",
     noConfig: bool = false,
     verbose: bool = false,
+    backend: string = "cc"
 ) =
   zigExists()
 
@@ -137,27 +150,34 @@ proc release(
   info bbfmt"[bold cyan]{cfg.buildPlan}"
 
   for build in cfg.builds:
-    let cmd = cfg.compileCmd(build, rest)
+    let compileArgs = newCompileArgs(cfg, backend, build, rest)
+    let cmd = (@[cfg.baseCmd] & compileArgs).join(" ")
     if dryrun or verbose:
       info fmt"[bold]cmd[/]: {cmd}".bb
       if dryrun: continue
 
-    let errCode = execCmd cmd
+    let errCode = forgeCompile(cfg.baseCmd, args = compileArgs, backend = backend)
     if errCode != 0:
       err "cmd: ", cmd
       errQuit &"exited with code {errCode} see above for error"
 
 
 const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
-const forgeArgs= ["+cc", "+targets", "+release", "+r", "-h", "--help", "-V", "--version"]
+const forgeArgs= ["+cc", "+cpp", "+targets", "+release", "+r", "-h", "--help", "-V", "--version"]
 
 let params = commandLineParams()
 if params.len > 0 and params[0] notin forgeArgs:
   let zigParams =
     if params[0] == "+zig": params[1..^1]
-    else: @["cc"] & params
+    else: @[getForgeBackend()] & params
   quit callZig(zigParams)
 
+type
+  NimBackend = enum
+    cc = "cc"
+    cpp = "cpp"
+
+proc `$`(t: typedesc[NimBackend]): string {.inline.} = "[cc|cpp]"
 
 hwylCli:
   name "forge"
@@ -178,6 +198,9 @@ hwylCli:
     [shared]
     n|`dry-run` "show command instead of executing"
     nimble "use nimble as base command for compiling"
+    [single]
+    t|target(string, "target triple"):
+        settings Required
   subcommands:
     ["+targets"]
     ... "show available targets"
@@ -192,10 +215,20 @@ hwylCli:
       args seq[string]
     flags:
       ^[shared]
-      t|target(string, "target triple"):
-        settings Required
+      ^[single]
     run:
-      cc(target, `dry-run`, nimble, args)
+      compile(target, `dry-run`, nimble, args)
+
+    ["+cpp"]
+    ... "compile a single binary with zig c++"
+    positionals:
+      args seq[string]
+    flags:
+      ^[shared]
+      ^[single]
+    run:
+      stderr.writeLine "support for zig c++ is experimental, please report any issues"
+      compile(target, `dry-run`, nimble, args, backend = "cpp")
 
     ["+release"]
     ... """
@@ -222,6 +255,7 @@ hwylCli:
       o|outdir("dist", string, "path to output dir")
       name(string, "set name, inferred otherwise")
       version(string, "set version, inferred otherwise")
+      b|backend(NimBackend.cc, NimBackend, "backend")
     run:
       release(
           target,
@@ -236,6 +270,7 @@ hwylCli:
           `config-file`,
           `no-config`,
           verbose,
+          backend = $backend
       )
 
     # added so it's included in overall CLI help documentation

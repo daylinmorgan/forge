@@ -4,6 +4,11 @@ import std/[
 ]
 import term
 
+proc getForgeBackend*(default = "cc"): string =
+  result = getEnv("FORGE_BACKEND", default)
+  if result == "cpp":
+    result = "c++"
+
 type Triple* = object
   cpu: string
   os: string
@@ -130,7 +135,7 @@ see: https://ziglang.org/download/""".indent(2)
 proc callZig*(params: varargs[string]): int  =
   zigExists()
   let process = startProcess(
-    "zig", args = params, options = {poStdErrToStdOut, poUsePath, poParentStreams}
+    "zig", args = params, options = {poUsePath, poParentStreams}
   )
   result = process.waitForExit()
   close process
