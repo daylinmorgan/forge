@@ -187,10 +187,16 @@ hwylCli:
   example usages:
     forge +release
     forge +zig version
-    forge -o hello hello.c
     forge +cc --target x86_64-linux-musl -- -d:release src/forge.nim
+    forge +release --backend cpp
 
-  if forge is called with something besides its subcommands it falls back to `zig cc`
+  forge is also a wrapper around zig:
+    for zig cc:
+      forge -o hello hello.c
+      forge +zig cc -o hello hello.c
+    for zig c++:
+      FORGE_BACKEND=cpp forge -o hello hello.cpp
+      forge +zig c++ -o hello hello.cpp
   """
   settings ShowHelp
   V vsn
