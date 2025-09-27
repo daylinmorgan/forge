@@ -46,7 +46,7 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
   )
   result = p.waitForExit()
 
-proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], backend = "cc") =
+proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noMacosSdk = false, backend = "cc") =
   ## compile with zig cc
   zigExists()
   if args.len == 0:
@@ -58,17 +58,24 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
     rest = parseArgs(args)
     ccArgs = genFlags(target, rest)
     baseCmd = if nimble: "nimble" else: "nim"
-    compileArgs = @[backend] & ccArgs & rest
+
+  var compileArgs = @[backend] & ccArgs #& rest
+
+  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
+    fetchSdk()
+    compileArgs &= sdkFlags()
+
+  compileArgs &= rest
 
   if dryrun:
-    stderr.writeLine (@[baseCmd] & @[backend] & ccArgs & rest).join(" ")
+    stderr.writeLine (@[baseCmd] & compileArgs).join(" ")
   else:
     quit forgeCompile(baseCmd, compileArgs, backend)
 
 proc release(
     target: seq[string] = @[],
     bin: seq[string] = @[],
-    posArgs: seq[string], # change name to posArgs
+    posArgs: seq[string],
     outdir: string = "dist",
     format: string = "",
     name: string = "",
@@ -77,6 +84,7 @@ proc release(
     nimble: bool = false,
     configFile: string = ".forge.cfg",
     noConfig: bool = false,
+    noMacosSdk = false,
     verbose: bool = false,
     backend: string = "cc"
 ) =
@@ -97,12 +105,15 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
+  if not noMacosSdk and not dryRun:
+    fetchSdk()
+
   let rest = parseArgs(posArgs)
 
   info bbfmt"[bold cyan]{cfg.buildPlan}"
 
   for build in cfg.builds:
-    let compileArgs = build.args(backend, rest)
+    var compileArgs = build.args(backend, noMacosSdk, rest)
     let cmd = (@[cfg.baseCmd] & compileArgs).join(" ")
     if dryrun or verbose:
       info fmt"[bold]cmd[/]: {cmd}".bb
@@ -156,9 +167,11 @@ hwylCli:
     [shared]
     n|`dry-run` "show command instead of executing"
     nimble "use nimble as base command for compiling"
+    `no-macos-sdk` "don't inject macos sdk compiler flags"
     [single]
     t|target(string, "target triple"):
         settings Required
+
   subcommands:
     ["+targets"]
     ... "show available targets"
@@ -175,7 +188,7 @@ hwylCli:
       ^[shared]
       ^[single]
     run:
-      compile(target, `dry-run`, nimble, args)
+      compile(target, `dry-run`, nimble, args, `no-macos-sdk`)
 
     ["+cpp"]
     ... "compile a single binary with zig c++"
@@ -185,7 +198,7 @@ hwylCli:
       ^[shared]
       ^[single]
     run:
-      compile(target, `dry-run`, nimble, args, backend = "cpp")
+      compile(target, `dry-run`, nimble, args, `no-macos-sdk`, backend = "cpp")
 
     ["+release"]
     ... """
@@ -226,6 +239,7 @@ hwylCli:
           nimble,
           `config-file`,
           `no-config`,
+          `no-macos-sdk`,
           verbose,
           backend = $backend
       )

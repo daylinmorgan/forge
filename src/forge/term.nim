@@ -15,6 +15,8 @@ proc columns*(items: seq[string]): string =
     .mapIt(it.join(""))
     .join("\n")
 
+# TODO: replace this with hwylterm/logging
+
 let prefix = $"[bold magenta]forge[/] [cyan]||[/] ".bb
 let errPrefix = $"[red]error ||[/] ".bb
 let warnPrefix = $"[yellow]warning ||[/] ".bb

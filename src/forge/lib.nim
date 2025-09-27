@@ -2,8 +2,8 @@ import std/[
   os, strformat, strutils
 ]
 
-import ./[config, term, zig]
-export config, term, zig
+import ./[config, term, zig, macos_sdk]
+export config, term, zig, macos_sdk
 
 type
   Build* = object
@@ -57,14 +57,20 @@ proc newBuild*(c: Config, target: string, bin: string): Build =
   result.params = params
   result.outDir = c.outDir / formatDirName(params.format, c.name, c.version, target)
 
-proc args*(b: Build, backend: string, rest: openArray[string]): seq[string] =
+proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string]): seq[string] =
+
   result.add backend
   result.add genFlags(b.triple, rest)
   result.add "-d:release"
   result.add rest
   result.add "--outdir:" & b.outDir
+
+  if not noMacosSdk and parseTriple(b.triple).inferOs == "MacOSX":
+    result.add sdkFlags()
+
   if b.params.args.len > 0:
     result.add b.params.args
+
   result.add b.bin.normalizedPath()
 
 iterator builds*(c: Config): Build =
