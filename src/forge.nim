@@ -46,6 +46,7 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
   )
   result = p.waitForExit()
 
+# TODO: reuse the notion of Build?
 proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noMacosSdk = false, backend = "cc") =
   ## compile with zig cc
   zigExists()
@@ -59,10 +60,10 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
     ccArgs = genFlags(target, rest)
     baseCmd = if nimble: "nimble" else: "nim"
 
-  var compileArgs = @[backend] & ccArgs #& rest
+  var compileArgs = @[backend] & ccArgs
 
-  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
-    fetchSdk()
+  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX" and not defined(macosx):
+    if not dryrun: fetchSdk()
     compileArgs &= sdkFlags()
 
   compileArgs &= rest
@@ -105,7 +106,7 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
-  if not noMacosSdk and not dryRun:
+  if not noMacosSdk and not dryRun and not defined(macosx):
     fetchSdk()
 
   let rest = parseArgs(posArgs)
