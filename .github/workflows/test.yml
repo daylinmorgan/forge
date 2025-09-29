@@ -20,7 +20,8 @@ jobs:
           fetch-depth: 0
 
       - uses: jiro4989/setup-nim-action@v2
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: mlugg/setup-zig@v2
+
 
       - name: Bootstrap with nimble
         run: |
