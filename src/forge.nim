@@ -46,13 +46,9 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
   )
   result = p.waitForExit()
 
-# TODO: reuse the notion of Build?
 proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noMacosSdk = false, backend = "cc") =
   ## compile with zig cc
   zigExists()
-  if args.len == 0:
-    errQuit "expected additional arguments i.e. -- -d:release src/main.nim"
-
   checkTargets(@[target])
 
   let
@@ -189,6 +185,8 @@ hwylCli:
       ^[shared]
       ^[single]
     run:
+      if args.len == 0:
+        hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
       compile(target, `dry-run`, nimble, args, `no-macos-sdk`)
 
     ["+cpp"]
@@ -199,6 +197,8 @@ hwylCli:
       ^[shared]
       ^[single]
     run:
+      if args.len == 0:
+        hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
       compile(target, `dry-run`, nimble, args, `no-macos-sdk`, backend = "cpp")
 
     ["+release"]
