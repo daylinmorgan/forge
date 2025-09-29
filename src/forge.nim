@@ -65,7 +65,8 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
   compileArgs &= rest
 
   if dryrun:
-    stderr.writeLine (@[baseCmd] & compileArgs).join(" ")
+    let cmd = (@[baseCmd] & compileArgs).join(" ")
+    info fmt"[bold]cmd[/]: {cmd}".bb
   else:
     quit forgeCompile(baseCmd, compileArgs, backend)
 

@@ -1,5 +1,5 @@
 import std/[
-  json, macros, math, os, osproc,
+  json, macros, os, osproc,
   strformat, strscans, strutils, sequtils
 ]
 import term
