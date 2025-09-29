@@ -14,6 +14,7 @@
 ]#
 
 import std/[appdirs, os, osproc, strformat, paths]
+import ./term
 
 let SDK_DIR =  appdirs.getDataDir() / Path("forge/macos_sdk")
 const SDK_REPO_URL = "https://github.com/mitchellh/zig-build-macos-sdk"
@@ -22,20 +23,18 @@ proc fetchSdk*(force: bool = false) =
   if dirExists($SDK_DIR):
     if force: removeDir($SDK_DIR)
     else: return
-  echo "fetching zig sdk" # TODO: logging + debug logging
+  info "cloning macos sdk to: " & $SDK_DIR
   createDir($SDK_DIR.parentDir)
-  let (output, code) =
-    execCmdEx(fmt"git clone {SDK_REPO_URL} {SDK_DIR}")
-  if code != 0: quit output # todo error handling
+  let (output, code) = execCmdEx(fmt"git clone {SDK_REPO_URL} {quoteShell($SDK_DIR)}")
+  if code != 0:
+    err "git clone failed:\n" & output
+    quit code
 
 proc sdkFlags*(): seq[string] =
   let
-    macos_lib = &"{SDK_DIR}/lib"
-    macos_include = &"{SDK_DIR}/include"
-    macos_frameworks = &"{SDK_DIR}/Frameworks"
+    macos_lib = quoteShell(&"{SDK_DIR}/lib")
+    macos_include = quoteShell(&"{SDK_DIR}/include")
+    macos_frameworks = quoteShell(&"{SDK_DIR}/Frameworks")
 
   result.add &"--passC:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
   result.add &"--passL:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
-
-when isMainModule:
-  fetchSdk()
