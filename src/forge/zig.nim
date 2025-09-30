@@ -1,6 +1,7 @@
 import std/[
   json, macros, os, osproc,
-  strformat, strscans, strutils, sequtils
+  strformat, strscans, strutils, sequtils,
+  sugar
 ]
 import term
 
@@ -59,7 +60,7 @@ macro addFlag*(arg: untyped): untyped =
     inferProc = newCall("infer" & arg.strVal, newIdentNode("triplet"))
 
   quote:
-    if `flag` notin args:
+    if not any(args, (f: string) => f.startsWith(`flag`)):
       let selected = `inferProc`
       if selected != "":
         result.add `flag` & selected
