@@ -7,6 +7,6 @@ bin           = @["forge"]
 binDir        = "bin"
 
 
-requires "nim >= 2.0.0"
+requires "nim >= 2.2.0"
 requires "https://github.com/daylinmorgan/hwylterm#8c3f459"
 requires "https://github.com/usu-dev/usu-nim"
