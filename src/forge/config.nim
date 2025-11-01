@@ -9,6 +9,7 @@ export tables, sets
 type ForgeConfig* = object
   targets*: OrderedTableRef[string, string]
   bins*: OrderedTableRef[string, string]
+  dist*: string
   outdir*: string
   format*: string
   name*: string
@@ -27,7 +28,7 @@ type
     paths*: HashSet[string]
     settings*: Settings
   Config* = object
-    name*, version*, format*, outdir*: string
+    name*, version*, format*, outdir*, dist*: string
     nimble*: bool
     targets*: Targets
     bins*: Bins
@@ -56,6 +57,8 @@ config =
   addLine $bb"| [green]bins[/]:"
   for bin, args in c.bins:
     addline addNameArgs(bin, args)
+
+  addLine $bbfmt"| [green]dist[/]: {c.dist}"
   info lines
 
 proc bbImpl(p: Params): string =
@@ -90,6 +93,7 @@ proc bbImpl(c: Config): string =
     if bin in c.bins.settings:
       result.add bbImpl(c.bins.settings[bin])
     result.add "\n"
+  addLine fmt"| [green]dist:[/] {c.dist}"
   result.strip()
 
 proc bb*(c: Config): BbString =
@@ -120,6 +124,18 @@ proc inferName(s: string, nimbleFile: string): string =
     return s
   elif nimbleFile != "":
     return nimbleFile.rsplit(".", maxsplit = 1)[0]
+
+proc inferDist*(dist: string): string =
+  result =
+    case dist
+    of "desktop":
+      "gui"
+    of "static":
+      "staticlib"
+    of "lib":
+      "lib"
+    else:
+      "console"
 
 proc findNimbleFile(): string =
   var candidates: seq[string]
@@ -162,6 +178,7 @@ proc inferBin(nimbleFile: string): string =
 proc newForgeConfig*(
     targets: seq[string],
     bins: seq[string],
+    dist: string,
     outdir: string,
     format: string,
     name: string,
@@ -186,6 +203,8 @@ proc newForgeConfig*(
   if result.outdir == "" or (result.outdir != "dist" and outdir != "dist"):
     result.outdir = outdir
 
+  if result.dist == "":
+    result.dist = inferDist(dist)
   if result.name == "":
     result.name = inferName(name, nimbleFile)
   if result.version == "":
@@ -265,6 +284,7 @@ proc to(old: ForgeConfig, _: typedesc[Config]): Config =
 proc newConfig*(
     targets: seq[string],
     bins: seq[string],
+    dist: string,
     outdir: string,
     format: string,
     name: string,
@@ -298,6 +318,8 @@ proc newConfig*(
   if result.outdir == "" or (result.outdir != "dist" and outdir != "dist"):
     result.outdir = outdir
 
+  if result.dist == "":
+    result.dist = inferDist(dist)
   if result.name == "":
     result.name = inferName(name, nimbleFile)
   if result.version == "":
@@ -362,6 +384,7 @@ when isMainModule:
 #:nimble true
 #:outdir forge-dist
 :format ${name}-${target}
+:dist ${dist}
 :targets (
   :triples (
     x86_64-linux-musl

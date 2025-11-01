@@ -10,6 +10,7 @@ type
     outDir*: string
     triple*: string
     bin*: string
+    dist*: string
     params*: Params
 
 # TODO: better name
@@ -53,6 +54,7 @@ proc formatDirName*(
 proc newBuild*(c: Config, target: string, bin: string): Build =
   let params = c.params(target, bin)
   result.bin = bin
+  result.dist = c.dist
   result.triple = target
   result.params = params
   result.outDir = c.outDir / formatDirName(params.format, c.name, c.version, target)
@@ -61,6 +63,7 @@ proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string])
 
   result.add backend
   result.add genFlags(b.triple, rest)
+  result.add "--app:" & b.dist
   result.add "-d:release"
   result.add rest
   result.add "--outdir:" & b.outDir

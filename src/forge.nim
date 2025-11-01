@@ -73,6 +73,7 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
 proc release(
     target: seq[string] = @[],
     bin: seq[string] = @[],
+    dist: string = "",
     posArgs: seq[string],
     outdir: string = "dist",
     format: string = "",
@@ -89,7 +90,7 @@ proc release(
   zigExists()
 
   let cfg =
-    newConfig(target, bin, outdir, format, name, version, nimble, configFile, noConfig)
+    newConfig(target, bin, dist, outdir, format, name, version, nimble, configFile, noConfig)
   if not cfg.hasTargets:
     errQuit "expected at least 1 target"
   if not cfg.hasBins:
@@ -221,6 +222,7 @@ hwylCli:
       # hwylterm should support @[] syntax and try to infer type to change call
       t|target(newSeq[string](), seq[string], "set target, may be repeated")
       bin(newSeq[string](), seq[string], "set bin, may be repeated")
+      dist(string, "set dist, inferred console app otherwise")
       format("${name}-v${version}-${target}", string, "set format")
       `config-file`(chooseConfig(), string, "path to config")
       `no-config` "ignore config file"
@@ -232,6 +234,7 @@ hwylCli:
       release(
           target,
           bin,
+          dist,
           args,
           outdir,
           format,
