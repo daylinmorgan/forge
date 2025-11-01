@@ -54,10 +54,59 @@ To invoke the same `zig` used by `forge` directly with the `cc` command, see `fo
 
 ### configuration
 
+#### Distribute a console application (default distribution)
 Example:
 
 ```sh
-forge +release --target,=x86_64-linux-musl,x86_64-macos-none --bin src/forge.nim
+forge +release --target,=x86_64-linux-musl,x86_64-macos-none --dist console --bin src/forge
+```
+
+Result:
+```
+dist
+├── forge-v2023.1001-x86_64-linux-musl
+│   └── forge
+└── forge-v2023.1001-x86_64-macos-none
+    └── forge
+```
+
+#### Distribute a static library (to compile into an application that may not be written in Nim)
+Example:
+
+```sh
+forge +release --target,=x86_64-linux-musl,x86_64-macos-none --dist static --bin src/forge
+```
+
+Result:
+```
+dist
+├── forge-v2023.1001-x86_64-linux-musl
+│   └── libforge.a
+└── forge-v2023.1001-x86_64-macos-none
+    └── libforge.a
+```
+
+#### Distribute a shared library (to be linked against in an application)
+Example:
+
+```sh
+forge +release --target,=x86_64-linux-musl,x86_64-macos-none --dist lib --bin src/forge
+```
+
+Result:
+```
+dist
+├── forge-v2023.1001-x86_64-linux-musl
+│   └── libforge.so
+└── forge-v2023.1001-x86_64-macos-none
+    └── libforge.dylib
+```
+
+#### Distribute an application with a graphical user interface (like a paint app, for example)
+Example:
+
+```sh
+forge +release --target,=x86_64-linux-musl,x86_64-macos-none --dist desktop --bin src/forge
 ```
 
 Result:
