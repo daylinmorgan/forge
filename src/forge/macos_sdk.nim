@@ -16,6 +16,10 @@
 import std/[appdirs, os, osproc, strformat, paths]
 import ./term
 
+when (NimMajor, NimMinor, NimPatch) <= (2, 2, 0): 
+  template `$`*(x: Path): string =
+    string(x)
+
 let SDK_DIR =  appdirs.getDataDir() / Path("forge/macos_sdk")
 const SDK_REPO_URL = "https://github.com/mitchellh/zig-build-macos-sdk"
 
