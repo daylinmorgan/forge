@@ -1,4 +1,4 @@
-import std/[os, osproc, strformat, strutils, sequtils, strtabs]
+import std/[os, osproc, strformat, strutils, sequtils, strtabs, distros]
 import hwylterm/hwylcli
 import forge/lib
 
@@ -103,8 +103,9 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
-  if not noMacosSdk and not dryRun and not defined(macosx):
-    fetchSdk()
+  if (not dryRun and not defined(macosx)) or (detectOs(MacOSX)):
+    if not noMacosSdk:
+      fetchSdk()
 
   let rest = parseArgs(posArgs)
 

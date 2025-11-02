@@ -1,5 +1,5 @@
 import std/[
-  os, strformat, strutils
+  os, strformat, strutils, distros
 ]
 
 import ./[config, term, zig, macos_sdk]
@@ -32,6 +32,18 @@ proc genFlags*(target: string, args: openArray[string] = @[]): seq[string] =
       fmt("--passL=-target {triplet}"),
     ]
 
+  if triplet.inferOs == "FreeBSD" and detectOs(MacOSX):
+    # Required for macos_sdk to properly target the FreeBSD cpu types supported by forge;
+    # Remove this, trigger an error about the compiler being unknown
+    if triplet.inferCPU == "amd64":
+      result.add "-d:TARGET_CPU_X86_64"
+    else:
+      result.add "-d:TARGET_CPU_X86"
+
+    # The linker and compiler fail without this flag passed;
+    # See here for workaround and why it happens: https://github.com/tpoechtrager/osxcross/blob/master/KNOWN_BUGS.md
+    result.add "--passC=-c"
+    result.add "--passL=-c"
 
 proc formatDirName*(
     formatstr: string,
@@ -65,8 +77,9 @@ proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string])
   result.add rest
   result.add "--outdir:" & b.outDir
 
-  if not noMacosSdk and parseTriple(b.triple).inferOs == "MacOSX" and not defined(macosx):
-    result.add sdkFlags()
+  if (parseTriple(b.triple).inferOs == "MacOSX" and not defined(macosx)) or (detectOs(MacOSX) and parseTriple(b.triple).inferOs == "FreeBSD"):
+    if not noMacosSdk:
+      result.add sdkFlags()
 
   if b.params.args.len > 0:
     result.add b.params.args
