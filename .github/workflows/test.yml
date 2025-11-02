@@ -1,16 +1,34 @@
 name: Test by Dogfood
 
 on:
+  workflow_dispatch:
+    inputs:
+      flags:
+        description: "flags forwared to forge +release"
+        default: ""
+        type: string
   workflow_call:
   push:
     branches:
       - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   build-artifact:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        nim-version:
+          - "2.0.16"
+          - "stable"
+        zig-version:
+          - "0.14.1"
+          - "latest"
 
     runs-on: ${{ matrix.os }}
 
@@ -20,8 +38,12 @@ jobs:
           fetch-depth: 0
 
       - uses: jiro4989/setup-nim-action@v2
-      - uses: mlugg/setup-zig@v2
+        with:
+          nim-version: ${{ matrix.nim-version }}
 
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ matrix.zig-version }}
 
       - name: Bootstrap with nimble
         run: |
@@ -30,4 +52,4 @@ jobs:
       - name: Generate all build artifacts
         run: |
           nimble setup -l
-          forge +release --verbose
+          forge +release --verbose ${{ github.event.inputs.flags }}
