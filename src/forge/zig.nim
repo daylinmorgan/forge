@@ -60,7 +60,7 @@ macro addFlag*(arg: untyped): untyped =
     inferProc = newCall("infer" & arg.strVal, newIdentNode("triplet"))
 
   quote:
-    if not any(args, (f: string) => f.startsWith(`flag`)):
+    if not sequtils.any(args, (f: string) => f.startsWith(`flag`)):
       let selected = `inferProc`
       if selected != "":
         result.add `flag` & selected
