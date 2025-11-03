@@ -83,6 +83,8 @@ proc inferOs*(t: Triple): string =
     "OpenBSD"
   of "netbsd":
     "NetBSD"
+  of "freebsd":
+    "FreeBSD"
   else:
     ""
 
