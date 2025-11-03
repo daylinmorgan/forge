@@ -72,7 +72,7 @@ proc inferOs*(t: Triple): string =
   #  Genode, JS, NimVM, Standalone, NintendoSwitch, FreeRTOS, Zephyr, NuttX, Any
   #
   # there is no way most of those actualy compile with Nim 2
-  case t.os
+  result = case t.os
   of "windows", "linux":
     t.os.capitalizeAscii()
   of "macos":
@@ -87,6 +87,11 @@ proc inferOs*(t: Triple): string =
     "FreeBSD"
   else:
     ""
+
+  if result == "":
+    warn fmt"failed to match target triple {t}, to a known OS"
+
+
 
 proc inferCpu*(t: Triple): string =
   # Available options are:
@@ -115,6 +120,9 @@ proc inferCpu*(t: Triple): string =
       t.cpu
     else:
       ""
+
+  if result == "":
+    warn fmt"failed to match target triple {t}, to a known cpu"
 
 
 proc getTargets*(os: seq[string] = @[], cpu: seq[string] = @[]): seq[Triple] =
