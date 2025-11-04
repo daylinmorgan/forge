@@ -16,12 +16,10 @@
 import std/[appdirs, os, osproc, strformat, paths]
 import ./term
 
-when (NimMajor, NimMinor, NimPatch) <= (2, 2, 0): 
-  template `$`*(x: Path): string =
-    string(x)
-
 let SDK_DIR =  appdirs.getDataDir() / Path("forge/macos_sdk")
 const SDK_REPO_URL = "https://github.com/mitchellh/zig-build-macos-sdk"
+var SDK_COMPILER_ARGS = &"--sysroot={SDK_DIR} -I/include -L/lib"
+var SDK_LINKER_ARGS = &"--sysroot={SDK_DIR} -I/include -L/lib"
 
 proc fetchSdk*(force: bool = false) =
   if dirExists($SDK_DIR):
@@ -35,10 +33,5 @@ proc fetchSdk*(force: bool = false) =
     quit code
 
 proc sdkFlags*(): seq[string] =
-  let
-    macos_lib = quoteShell(&"{SDK_DIR}/lib")
-    macos_include = quoteShell(&"{SDK_DIR}/include")
-    macos_frameworks = quoteShell(&"{SDK_DIR}/Frameworks")
-
-  result.add &"--passC:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
-  result.add &"--passL:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
+  result.add &"--passC:{SDK_COMPILER_ARGS} -F/Frameworks"
+  result.add &"--passL:{SDK_LINKER_ARGS} -F/Frameworks"
