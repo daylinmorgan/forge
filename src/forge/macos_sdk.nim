@@ -13,32 +13,52 @@
   switch("passL", &"-I{macos_include} -F{macos_frameworks} -L{macos_lib}")
 ]#
 
-import std/[appdirs, os, osproc, strformat, paths]
+import std/[appdirs, os, osproc, strformat, paths, strutils]
 import ./term
 
-when (NimMajor, NimMinor, NimPatch) <= (2, 2, 0): 
+when (NimMajor, NimMinor, NimPatch) <= (2, 2, 0):
   template `$`*(x: Path): string =
     string(x)
 
-let SDK_DIR =  appdirs.getDataDir() / Path("forge/macos_sdk")
+let SDK_CACHE =  appdirs.getDataDir() / Path("forge/macos_sdk")
 const SDK_REPO_URL = "https://github.com/mitchellh/zig-build-macos-sdk"
 
 proc fetchSdk*(force: bool = false) =
-  if dirExists($SDK_DIR):
-    if force: removeDir($SDK_DIR)
+  if dirExists($SDK_CACHE):
+    if force: removeDir($SDK_CACHE)
     else: return
-  info "cloning macos sdk to: " & $SDK_DIR
-  createDir($SDK_DIR.parentDir)
-  let (output, code) = execCmdEx(fmt"git clone {SDK_REPO_URL} {quoteShell($SDK_DIR)}")
+  info "cloning macos sdk to: " & $SDK_CACHE
+  createDir($SDK_CACHE.parentDir)
+  let (output, code) = execCmdEx(fmt"git clone {SDK_REPO_URL} {quoteShell($SDK_CACHE)}")
   if code != 0:
     err "git clone failed:\n" & output
     quit code
 
-proc sdkFlags*(): seq[string] =
-  let
-    macos_lib = quoteShell(&"{SDK_DIR}/lib")
-    macos_include = quoteShell(&"{SDK_DIR}/include")
-    macos_frameworks = quoteShell(&"{SDK_DIR}/Frameworks")
+proc getMacSdkFlags*(): string =
+  when defined(macosx):
+    # macos should have it's own sdk's
+    let (sysroot, code) = execCmdEx("xcrun --show-sdk-path")
+    if code != 0:
+      err "failed to get sysroot"
+      warn "linking may fail"
+      return
+    let
+      sdkDir = sysroot.strip()
+      macos_lib = quoteShell(&"{sdkDir}/usr/lib")
+      macos_include = quoteShell(&"{sdkDir}/usr/include")
+      macos_frameworks = quoteShell(&"{sdkDir}/system/Library/Frameworks")
+    result = &"-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
 
-  result.add &"--passC:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
-  result.add &"--passL:-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
+  else:
+    let
+      sdkDir = $SDK_CACHE
+      macos_lib = quoteShell(&"{sdkDir}/lib")
+      macos_include = quoteShell(&"{sdkDir}/include")
+      macos_frameworks = quoteShell(&"{sdkDir}/Frameworks")
+    result = &"-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
+
+proc sdkPassFlags*(): seq[string] =
+  let flags = getMacSdkFlags()
+  if flags != "":
+    result.add &"--passC:{flags}"
+    result.add &"--passL:{flags}"

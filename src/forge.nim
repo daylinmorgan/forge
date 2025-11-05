@@ -58,9 +58,10 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
 
   var compileArgs = @[backend] & ccArgs
 
-  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX" and not defined(macosx):
-    if not dryrun: fetchSdk()
-    compileArgs &= sdkFlags()
+  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
+    if not defined(macosx) and not dryrun: fetchSdk()
+  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
+    compileArgs &= sdkPassFlags()
 
   compileArgs &= rest
 
