@@ -16,6 +16,8 @@ task bundle, "package build assets":
       cpFile("../README.md", fmt"{dir}/README.md")
       exec cmd
 
+when withDir(thisDir(), fileExists(".forge.nims")):
+  when defined(forge): include ".forge.nims"
 
 # begin Nimble config (version 2)
 --noNimblePath

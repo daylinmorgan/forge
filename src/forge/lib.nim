@@ -78,3 +78,42 @@ iterator builds*(c: Config): Build =
     for b in c.bins.paths:
       yield newBuild(c, t, b)
 
+
+type
+  # just because they use a string doesn't mean I have too...
+  # https://nim-lang.org/docs/system.html#hostOS
+  # subset of HostOS that zig works with...probably
+  NimHostOs* = enum
+    windows, macosx, linux, netbsd, freebsd, openbsd
+
+  # https://nim-lang.org/docs/system.html#hostCPU
+  # subset of HostCpu that zig works with...probably
+  NimHostCpu* = enum
+    i386, amd64, arm, arm64, powerpc, powerpc64, powerpc64el,
+    riscv32, riscv64, longarch64
+
+  # these are based on zig targets
+  Libc* = enum
+    none, gnu, musl,
+    # abi variants
+    eabi, eabihf,
+    gnueabi, gnueabihf,
+    musleabi, musleabihf,
+    gnuabi64, gnuabin32,
+    muslabi64, muslabin32,
+    gnux32, muslx32,
+    gnusf,muslsf
+
+proc toTriple*(os: NimHostOs, cpu: NimHostCpu, libc: Libc): Triple =
+  result.os = case os:
+    of macosx: "macos"
+    else: $os
+  result.cpu =  case cpu:
+    of i386: "x86"
+    of amd64: "x86_64"
+    of arm64: "aarch64"
+    of powerpc64el: "powerpc64le"
+    else: $cpu
+  result.libc = $libc
+
+

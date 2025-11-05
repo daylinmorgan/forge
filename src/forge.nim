@@ -124,15 +124,35 @@ proc release(
       errQuit &"exited with code {errCode} see above for error"
 
 
-const vsn{.strDefine.} = staticExec "git describe --tags --always HEAD"
-const forgeArgs= ["+cc", "+cpp", "+targets", "+release", "+r", "-h", "--help", "-V", "--version"]
+const vsn {.strDefine.} = staticExec "git describe --tags --always HEAD"
+const forgeCli = [
+  # subcommands
+  "+cc", "+cpp", "+targets", "+release", "+r", "+triple", "+sdk-flags", "+nims",
+  # global flags
+  "-h", "--help", "-V", "--version"
+]
 
 let params = commandLineParams()
-if params.len > 0 and params[0] notin forgeArgs:
+if params.len > 0 and params[0] notin forgeCli:
   let zigParams =
     if params[0] == "+zig": params[1..^1]
     else: @[getForgeBackend()] & params
   quit callZig(zigParams)
+
+proc inferLibc(os: NimHostOs, cpu: NimHostCpu, libc: string): Libc =
+  if libc != "":
+    try:
+      return parseEnum[Libc](libc)
+    except:
+      # NOTE: export enumNames from hwylcli?
+      # let choices = enumNames(Libc).join(",")
+      # hwylCliError(bbfmt"failed to parse as enum: [b]{libc}[/], expected one of: " & choices)
+      hwylCliError(bbfmt"failed to parse [b]{libc}[/] as Libc")
+  case os:
+  of linux, windows: result = gnu
+  of macosx, freebsd, openbsd, netbsd: result = none
+  # else:
+  #   hwylCliError("failed to infer default target libc from os: " & $os)
 
 type
   NimBackend = enum
@@ -250,3 +270,57 @@ hwylCli:
     # added so it's included in overall CLI help documentation
     ["+zig"]
     ... "invoke the zig binary used by forge"
+
+    ["+sdk-flags"]
+    ... "print flags for linking to macos frameworks"
+    flags:
+      ^[shared]
+    run:
+      when not defined(macosx):
+        fetchSdk()
+      stdout.write getMacSdkFlags()
+
+    ["+triple"]
+    ... "convert nim hostOS and hostCPU to a zig triple"
+    flags:
+      os(parseEnum[NimHostOs](hostOs), NimHostOs, "set target os")
+      cpu(parseEnum[NimHostCpu](hostCpu), NimHostCpu, "set target cpu")
+      libc(string, "set target libc")
+    run:
+      stdout.write toTriple(os, cpu, inferLibc(os, cpu, libc))
+
+    ["+nims"]
+    ... """
+    generate a nimscript snippet for use with forge
+
+    If you want to conditionally include this snippet you can
+    generate a nimscript file `[i]forge +nims > .forge.nims[/]`
+    and add the following line to config.nims:
+    `when withDir(thisDir(), fileExists(".forge.nims")): include ".forge.nims"`
+    or to make this conditional on another define:
+    ```
+    when withDir(thisDir(), fileExists(".forge.nims")) and defined(forge):
+      include ".forge.nims"
+    ```
+    """
+    flags:
+      path:
+        ? "set the default forgePath to absolute path"
+        # BUG: need newer version of hwylterm
+        # ? """
+        #
+        # the nimscript includes and overrivedable define `forgePath`
+        # if this flag is set the default value
+        # will be the currently running forge
+        # otherwise it's set to "forge"
+        # """
+    run:
+      const defaultSnippet = slurp "forge/setup.nims"
+      let nimsSnippet =
+        if not path: defaultSnippet
+        else:
+          var lines = defaultSnippet.splitLines()
+          lines[0]  = "const forgePath {.strdefine.} = " & "r\"" & getAppFilename() & "\""
+          lines.join("\n")
+      echo nimsSnippet
+
