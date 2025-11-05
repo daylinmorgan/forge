@@ -1,7 +1,7 @@
 import std/[
   json, macros, os, osproc,
   strformat, strscans, strutils, sequtils,
-  sugar
+  sugar, appdirs, paths
 ]
 import term
 
@@ -14,6 +14,15 @@ type Triple* = object
   cpu: string
   os: string
   libc: string
+
+type SDK* = object
+  url*: string
+  os*: string
+  dir*: Path
+  cflags*: string
+  lflags*: string
+  llvm_target*: string
+  release_version*: string
 
 proc parseTriple*(s: string): Triple =
   let parts = s.split("-")
@@ -123,6 +132,23 @@ proc inferCpu*(t: Triple): string =
 
   if result == "":
     warn fmt"failed to match target triple {t}, to a known cpu"
+
+
+proc inferSDK*(t: Triple): SDK =
+  # Current options:
+  #  MacOS
+
+  # NOTE: When cross-compiling for platforms that zig doesn't support, drops support for, or
+  #  relies on the internal LLVM backend with a sysroot to compile, those can be configured here.
+  # Some platforms require extra compiler flags (cflags) and / or linker flags (lflags). Others
+  #  may also need a version number and a non-standard target triplet when passed to underlying LLVM.
+  case t.os
+  of "macos":
+    result.url = "https://github.com/mitchellh/zig-build-macos-sdk"
+    result.os = t.os
+    result.dir = appdirs.getDataDir() / Path(fmt"forge/{t.os}_sdk")
+    result.cflags = "-F/Frameworks"
+    result.lflags = "-F/Frameworks"
 
 
 proc getTargets*(os: seq[string] = @[], cpu: seq[string] = @[]): seq[Triple] =

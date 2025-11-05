@@ -55,12 +55,13 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
     rest = parseArgs(args)
     ccArgs = genFlags(target, rest)
     baseCmd = if nimble: "nimble" else: "nim"
+    triple = parseTriple(target)
 
   var compileArgs = @[backend] & ccArgs
 
-  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX" and not defined(macosx):
-    if not dryrun: fetchSdk()
-    compileArgs &= sdkFlags()
+  if not noMacosSdk and triple.inferOs == "MacOSX" and not defined(macosx):
+    if not dryrun: fetchSdk(inferSDK(triple))
+    compileArgs &= sdkFlags(inferSDK(triple))
 
   compileArgs &= rest
 
@@ -104,7 +105,9 @@ proc release(
     info "[bold blue]dry run...see below for commands".bb
 
   if not noMacosSdk and not dryRun and not defined(macosx):
-    fetchSdk()
+    for t in target:
+      let triple = parseTriple(t)
+      fetchSdk(inferSDK(triple))
 
   let rest = parseArgs(posArgs)
 

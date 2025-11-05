@@ -65,8 +65,9 @@ proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string])
   result.add rest
   result.add "--outdir:" & b.outDir
 
-  if not noMacosSdk and parseTriple(b.triple).inferOs == "MacOSX" and not defined(macosx):
-    result.add sdkFlags()
+  let t = parseTriple(b.triple)
+  if not noMacosSdk and t.inferOs == "MacOSX" and not defined(macosx):
+    result.add sdkFlags(inferSDK(t))
 
   if b.params.args.len > 0:
     result.add b.params.args
