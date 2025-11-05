@@ -18,22 +18,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-artifact:
+  test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        nim-version:
-          - "2.0.16"
-          - "stable"
-        zig-version:
-          - "0.14.1"
-          - "latest"
+        nim-version: [ "2.0.16", "stable"]
+        zig-version: [ "0.14.1", "latest"]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -45,11 +41,30 @@ jobs:
         with:
           version: ${{ matrix.zig-version }}
 
+      - name: Update nimble
+        run: |
+          nimble install "nimble@0.20.1"
+          nimble --version
+
       - name: Bootstrap with nimble
         run: |
           nimble install -Y
 
-      - name: Generate all build artifacts
+      - name: simple test module that relies on a macos framework
+        run: forge +release --verbose --bin tests/random.nim
+
+      - name: cross compile forge
         run: |
           nimble setup -l
           forge +release --verbose ${{ github.event.inputs.flags }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: nim-lang/nimble
+          path: nimble-repo
+          submodules: recursive
+
+      - name: cross-compile nimble
+        working-directory: nimble-repo
+        run: forge +release --verbose --config-file ../.forge.usu
+
