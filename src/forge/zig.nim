@@ -11,9 +11,9 @@ proc getForgeBackend*(default = "cc"): string =
     result = "c++"
 
 type Triple* = object
-  cpu: string
-  os: string
-  libc: string
+  cpu*: string
+  os*: string
+  libc*: string
 
 proc parseTriple*(s: string): Triple =
   let parts = s.split("-")

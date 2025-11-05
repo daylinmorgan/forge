@@ -68,3 +68,16 @@ jobs:
         working-directory: nimble-repo
         run: forge +release --verbose --config-file ../.forge.usu
 
+      # I think nimscript gorgeEx isn't using powershell so paths matter
+      - name: generate .forge.nims
+        if: matrix.os == 'windows-latest'
+        run: forge +nims --path > .forge.nims
+
+      - name: generate .forge.nims
+        if: matrix.os != 'windows-latest'
+        run: forge +nims > .forge.nims
+
+      - name: build using .forge.nims
+        run: nim c -d:forge --os:MacOSX --cpu:arm64 --outdir:bin src/forge.nim
+
+

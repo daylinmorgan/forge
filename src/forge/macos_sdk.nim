@@ -27,7 +27,7 @@ proc fetchSdk*(force: bool = false) =
   if dirExists($SDK_CACHE):
     if force: removeDir($SDK_CACHE)
     else: return
-  info "cloning macos sdk to: " & $SDK_CACHE
+  # info "cloning macos sdk to: " & $SDK_CACHE
   createDir($SDK_CACHE.parentDir)
   let (output, code) = execCmdEx(fmt"git clone {SDK_REPO_URL} {quoteShell($SDK_CACHE)}")
   if code != 0:
@@ -48,7 +48,6 @@ proc getMacSdkFlags*(): string =
       macos_include = quoteShell(&"{sdkDir}/usr/include")
       macos_frameworks = quoteShell(&"{sdkDir}/system/Library/Frameworks")
     result = &"-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
-
   else:
     let
       sdkDir = $SDK_CACHE
