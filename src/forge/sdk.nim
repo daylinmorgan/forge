@@ -1,4 +1,4 @@
-## fetch the macos sdk for cross-compiling
+## fetch an sdk for cross-compiling
 
 #[
   essentially automate this config.nims snippet (from grabnim) with flags
@@ -15,6 +15,10 @@
 
 import std/[os, osproc, strformat, paths]
 import term, zig
+
+when (NimMajor, NimMinor, NimPatch) <= (2, 2, 0):
+  template `$`*(x: Path): string =
+    string(x)
 
 # Almost all non-Windows platforms that need either an SDK or use the OS source code as a sysroot
 #  will need these passed to the compiler and linker; separated for readability

@@ -46,7 +46,7 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
   )
   result = p.waitForExit()
 
-proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noMacosSdk = false, backend = "cc") =
+proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noSdk = false, backend = "cc") =
   ## compile with zig cc
   zigExists()
   checkTargets(@[target])
@@ -59,7 +59,7 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
 
   var compileArgs = @[backend] & ccArgs
 
-  if not noMacosSdk and triple.inferOs == "MacOSX" and not defined(macosx):
+  if not noSdk and triple.inferOs == "MacOSX" and not defined(macosx):
     if not dryrun: fetchSdk(inferSDK(triple))
     compileArgs &= sdkFlags(inferSDK(triple))
 
@@ -83,7 +83,7 @@ proc release(
     nimble: bool = false,
     configFile: string = ".forge.cfg",
     noConfig: bool = false,
-    noMacosSdk = false,
+    noSdk = false,
     verbose: bool = false,
     backend: string = "cc"
 ) =
@@ -104,7 +104,7 @@ proc release(
   if dryrun:
     info "[bold blue]dry run...see below for commands".bb
 
-  if not noMacosSdk and not dryRun and not defined(macosx):
+  if not noSdk and not dryRun and not defined(macosx):
     for t in target:
       let triple = parseTriple(t)
       fetchSdk(inferSDK(triple))
@@ -114,7 +114,7 @@ proc release(
   info bbfmt"[bold cyan]{cfg.buildPlan}"
 
   for build in cfg.builds:
-    var compileArgs = build.args(backend, noMacosSdk, rest)
+    var compileArgs = build.args(backend, noSdk, rest)
     let cmd = (@[cfg.baseCmd] & compileArgs).join(" ")
     if dryrun or verbose:
       info fmt"[bold]cmd[/]: {cmd}".bb
@@ -168,7 +168,7 @@ hwylCli:
     [shared]
     n|`dry-run` "show command instead of executing"
     nimble "use nimble as base command for compiling"
-    `no-macos-sdk` "don't inject macos sdk compiler flags"
+    `no-sdk` "don't fetch sdk or inject sdk compiler flags"
     [single]
     t|target(string, "target triple"):
         settings Required
@@ -191,7 +191,7 @@ hwylCli:
     run:
       if args.len == 0:
         hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
-      compile(target, `dry-run`, nimble, args, `no-macos-sdk`)
+      compile(target, `dry-run`, nimble, args, `no-sdk`)
 
     ["+cpp"]
     ... "compile a single binary with zig c++"
@@ -203,7 +203,7 @@ hwylCli:
     run:
       if args.len == 0:
         hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
-      compile(target, `dry-run`, nimble, args, `no-macos-sdk`, backend = "cpp")
+      compile(target, `dry-run`, nimble, args, `no-sdk`, backend = "cpp")
 
     ["+release"]
     ... """
@@ -244,7 +244,7 @@ hwylCli:
           nimble,
           `config-file`,
           `no-config`,
-          `no-macos-sdk`,
+          `no-sdk`,
           verbose,
           backend = $backend
       )
