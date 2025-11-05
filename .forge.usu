@@ -12,8 +12,8 @@
   )
 )
 
-:bins (
-  :paths (
-    src/forge
-  )
-)
+# :bins (
+#   :paths (
+#     src/forge
+#   )
+# )
