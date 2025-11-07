@@ -23,8 +23,7 @@ nimble install forge
 
 ## Usage
 
-`forge` provides two key methods to compile your `nim` source `forge +cc` and `forge +release`.
-
+`forge` has a number of subcommands to facilitate compiling `nim` binaries (see `forge --help` for more info.)
 
 ### `forge +cc`
 
@@ -44,15 +43,7 @@ likely run from the root directory of a `nim` project with a `<project>.nimble`
 
 You can either specify all commands on the CLI or use a [config](#configuration) file.
 
-### using zig
-
-`forge` is a wrapper around `zig` and `zig cc`.
-If it's called without any of it's known subcommands (all prefixed by "+") then it will fall back to `zig cc`.
-This way we can deploy a single self-invoking binary since the `clang.exe` specified to `nim` can't have subcommands.
-
-To invoke the same `zig` used by `forge` directly with the `cc` command, see `forge +zig`.
-
-### configuration
+### `forge +release` w/configuration
 
 Example:
 
@@ -96,6 +87,38 @@ Example:
 ```sh
 forge +release --verbose --dryrun
 ```
+
+### `forge +nims`
+
+If you prefer to invoke `nim` directly to compile your program, you can easily extend your existing configuration to rely on `forge`.
+
+`forge +nims` will print a nimscript snippet that will interpret compile time defines (`--os`, `--cpu`, `--d:libc`) to inject the necessary compiler/linker flags to `forge` (`zig cc`).
+
+Example to optionally enable it for your project:
+
+```sh
+cat >> config.nims <<EOF
+when withDir(thisDir(), fileExists(".forge.nims")):
+  when defined(forge): include ".forge.nims"
+EOF
+forge +nims >  .forge.nims
+```
+
+Then to compile you can define `forge` and pass the os and cpu flags to `nim` and a `forge` specific `libc` flag.
+
+```sh
+nim c -d:forge --os:Macosx --cpu:aarch64 src/forge.nim
+nim c -d:forge --libc:musl src/forge.nim
+nim c -d:forge -d:target:x86_64-linux-musl src/forge.nim
+```
+
+### `forge +zig`
+
+`forge` is a wrapper around `zig` and `zig cc`.
+If it's called without any of it's known subcommands (all prefixed by "+") or global flags then it will fall back to `zig cc`.
+This way we can deploy a single self-invoking binary since the `clang.exe` specified to `nim` can't have subcommands.
+
+To invoke the same `zig` used by `forge` directly, forwarding all other args, see `forge +zig`.
 
 ## Acknowledgements
 
