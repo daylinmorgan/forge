@@ -46,7 +46,15 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
   )
   result = p.waitForExit()
 
-proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: seq[string], noMacosSdk = false, backend = "cc") =
+proc compile(
+  target: string,
+  dryrun: bool = false,
+  nimble: bool = false,
+  args: seq[string],
+  noMacosSdk = false,
+  backend = "cc",
+  verbose = false
+) =
   ## compile with zig cc
   zigExists()
   checkTargets(@[target])
@@ -57,18 +65,16 @@ proc compile(target: string, dryrun: bool = false, nimble: bool = false, args: s
     baseCmd = if nimble: "nimble" else: "nim"
 
   var compileArgs = @[backend] & ccArgs
-
   if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
     if not defined(macosx) and not dryrun: fetchSdk()
-  if not noMacosSdk and parseTriple(target).inferOs == "MacOSX":
     compileArgs &= sdkPassFlags()
 
   compileArgs &= rest
 
-  if dryrun:
-    let cmd = (@[baseCmd] & compileArgs).join(" ")
-    info fmt"[bold]cmd[/]: {cmd}".bb
-  else:
+  let cmdStr = (@[baseCmd] & compileArgs).join(" ")
+  if dryrun or verbose:
+    info fmt"[bold]cmd[/]: {cmdStr}".bb
+  if not dryrun:
     quit forgeCompile(baseCmd, compileArgs, backend)
 
 proc release(
@@ -144,22 +150,18 @@ proc inferLibc(os: NimHostOs, cpu: NimHostCpu, libc: string): Libc =
     try:
       return parseEnum[Libc](libc)
     except:
-      # NOTE: export enumNames from hwylcli?
-      # let choices = enumNames(Libc).join(",")
-      # hwylCliError(bbfmt"failed to parse as enum: [b]{libc}[/], expected one of: " & choices)
-      hwylCliError(bbfmt"failed to parse [b]{libc}[/] as Libc")
+      let choices = enumNamesWithValues(typeof(result)).toSeq().join(",")
+      hwylCliError(
+        bbfmt"failed to parse value for [b]libc[/] as enum: [b]{libc}[/] expected one of: " & choices
+      )
   case os:
   of linux, windows: result = gnu
   of macosx, freebsd, openbsd, netbsd: result = none
-  # else:
-  #   hwylCliError("failed to infer default target libc from os: " & $os)
+  # else: hwylCliError("failed to infer default target libc from os: " & $os)
 
-type
-  NimBackend = enum
-    cc = "cc"
-    cpp = "cpp"
+type NimBackend = enum cc, cpp
 
-proc `$`(t: typedesc[NimBackend]): string {.inline.} = "[cc|cpp]"
+proc `$`(t: typedesc[NimBackend]): string {.inline.} = "cc|cpp"
 
 hwylCli:
   name "forge"
@@ -180,13 +182,14 @@ hwylCli:
       FORGE_BACKEND=cpp forge -o hello hello.cpp
       forge +zig c++ -o hello hello.cpp
   """
-  settings ShowHelp
+  settings LongHelp
   V vsn
   flags:
     [shared]
     n|`dry-run` "show command instead of executing"
     nimble "use nimble as base command for compiling"
     `no-macos-sdk` "don't inject macos sdk compiler flags"
+    v|verbose "set verbose"
     [single]
     t|target(string, "target triple"):
         settings Required
@@ -209,7 +212,7 @@ hwylCli:
     run:
       if args.len == 0:
         hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
-      compile(target, `dry-run`, nimble, args, `no-macos-sdk`)
+      compile(target, `dry-run`, nimble, args, `no-macos-sdk`, verbose = verbose)
 
     ["+cpp"]
     ... "compile a single binary with zig c++"
@@ -221,34 +224,37 @@ hwylCli:
     run:
       if args.len == 0:
         hwylCliError "expected additional arguments i.e. -- -d:release src/main.nim"
-      compile(target, `dry-run`, nimble, args, `no-macos-sdk`, backend = "cpp")
+      compile(target, `dry-run`, nimble, args, `no-macos-sdk`, backend = "cpp", verbose = verbose)
 
     ["+release"]
     ... """
     generate release assets for n>=1 targets
 
-    format argument:
-      format is a template string used for each target directory
-      available fields are [b i]name, version, target[/]
-
-    if name or version are not specified they will be inferred from the local .nimble file
+    [i]NOTE[/]: all positional args will be passed directly to nim
     """
     alias "+r"
     positionals:
       args seq[string]
     flags:
       ^[shared]
-      v|verbose "enable verbose"
       # hwylterm should support @[] syntax and try to infer type to change call
-      t|target(newSeq[string](), seq[string], "set target, may be repeated")
-      bin(newSeq[string](), seq[string], "set bin, may be repeated")
-      format("${name}-v${version}-${target}", string, "set format")
+      t|target(seq[string], "set target, may be repeated")
+      b|bin(seq[string], "set bin, may be repeated")
+      format:
+        * "${name}-v${version}-${target}"
+        T string
+        ? """
+        format is a template string used for each target directory
+        available fields are [b i]name, version, target[/]
+
+        if name or version are not specified they will be inferred from the local .nimble file
+        """
       `config-file`(chooseConfig(), string, "path to config")
       `no-config` "ignore config file"
       o|outdir("dist", string, "path to output dir")
       name(string, "set name, inferred otherwise")
       version(string, "set version, inferred otherwise")
-      b|backend(NimBackend.cc, NimBackend, "backend")
+      backend(NimBackend.cc, NimBackend, "backend")
     run:
       release(
           target,
@@ -305,15 +311,14 @@ hwylCli:
     """
     flags:
       path:
-        ? "set the default forgePath to absolute path"
-        # BUG: need newer version of hwylterm
-        # ? """
-        #
-        # the nimscript includes and overrivedable define `forgePath`
-        # if this flag is set the default value
-        # will be the currently running forge
-        # otherwise it's set to "forge"
-        # """
+        ? """
+        set the default forgePath to absolute path"
+
+        the nimscript includes and overrivedable define `forgePath`
+        if this flag is set the default value
+        will be the currently running forge
+        otherwise it's set to "forge"
+        """
     run:
       const defaultSnippet = slurp "forge/setup.nims"
       let nimsSnippet =
