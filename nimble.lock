@@ -3,22 +3,22 @@
   "packages": {
     "hwylterm": {
       "version": "0.1.0",
-      "vcsRevision": "8c3f459e4f92bb9f95a7ad5f0fbd510e31c822f0",
+      "vcsRevision": "3f19c64a7429e03d755cc53e002e7e70fbe17950",
       "url": "https://github.com/daylinmorgan/hwylterm",
       "downloadMethod": "git",
       "dependencies": [],
       "checksums": {
-        "sha1": "115acc6c555120e09c559d5a72280aaa82209399"
+        "sha1": "9bd2593cb81e418890db4ce533e8109d5368ae11"
       }
     },
     "usu": {
       "version": "0.1.0",
-      "vcsRevision": "ab2406bd5b857f44c9ebee8ed5f7287b30e089dd",
+      "vcsRevision": "c113c6282178b874cc37ef70d2b2b2524849d277",
       "url": "https://github.com/usu-dev/usu-nim",
       "downloadMethod": "git",
       "dependencies": [],
       "checksums": {
-        "sha1": "f9414616e9e7b225257b78caeb7438a52347f010"
+        "sha1": "9c635d33589badf49bd2ad7b4a4b848eb1698be3"
       }
     }
   },
