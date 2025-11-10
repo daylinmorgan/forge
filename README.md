@@ -108,7 +108,7 @@ Then to compile you can define `forge` and pass the os and cpu flags to `nim` an
 
 ```sh
 nim c -d:forge --os:Macosx --cpu:aarch64 src/forge.nim
-nim c -d:forge --libc:musl src/forge.nim
+nim c -d:forge --d:libc:musl src/forge.nim
 nim c -d:forge -d:target:x86_64-linux-musl src/forge.nim
 ```
 
