@@ -63,7 +63,7 @@ jobs:
           repository: nim-lang/nimble
           path: nimble-repo
           submodules: recursive
-          ref: 0.20.1
+          ref: v0.20.1
 
       - name: cross-compile nimble
         working-directory: nimble-repo
