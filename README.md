@@ -83,6 +83,36 @@ src/forge
 src/forgecc = "--opt:size" # use a custom flag for this binary
 ```
 
+<details>
+<summary>config example using new usu format</summary>
+
+```usu
+.nimble true
+.format "${name}-${target}"
+.outdir forge-dist
+
+.target {
+  .triples [
+    x86_64-linux-musl
+    x86_64-linux-gnu
+  ]
+  .x86_64-linux-musl
+    {.args [--opt:speed]}
+  .x86-linux-gnu
+    {.format "${name}-x86_64-linux-not-musl"}
+  }
+}
+
+.bins {
+  .paths [ src/forge src/forgecc ]
+  .settings {
+    .src/forge {.args [--opt:size]}
+  }
+}
+```
+
+</details>
+
 Example:
 ```sh
 forge +release --verbose --dryrun
