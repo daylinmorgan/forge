@@ -312,7 +312,7 @@ hwylCli:
     flags:
       path:
         ? """
-        set the default forgePath to absolute path"
+        set the default forgePath to absolute path
 
         the nimscript includes and overrivedable define `forgePath`
         if this flag is set the default value
