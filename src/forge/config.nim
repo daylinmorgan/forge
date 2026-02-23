@@ -17,7 +17,7 @@ type ForgeConfig* = object
 
 type
   Params* = object
-    args*: string
+    args*: seq[string]
     format*: string
   Settings = OrderedTableRef[string, Params]
   Targets* = object
@@ -63,8 +63,8 @@ proc bbImpl(p: Params): string =
   result.add fmt" | [faint]"
   if p.format != "":
     result.add fmt"[i]format[/]: {p.format}"
-  if p.args != "":
-    result.add fmt"[i]args[/]: {p.args}"
+  if p.args.len > 0:
+    result.add fmt"[i]args[/]: {bbEscape($p.args)}"
   result.add "[/]"
 
 proc bbImpl(c: Config): string =
@@ -203,49 +203,6 @@ proc newForgeConfig*(
     if bin != "":
       result.bins[bin] = ""
 
-template checkKind(node: UsuNode, k: UsuNodeKind) =
-  if node.kind != k:
-    raise newException(UsuParserError, "Expected node kind: " & $k & ", got: " & $node.kind & ", node: " & $node)
-
-proc parseHook(s: var string, node: UsuNode) =
-  checkKind node, UsuValue
-  s = node.value
-
-proc parseHook(s: var bool, node: UsuNode) =
-  checkKind node, UsuValue
-  s = parseBool(node.value)
-
-proc parseHook[T](s: var seq[T], node: UsuNode) =
-  checkKind node, UsuArray
-  for n in node.elems:
-    var e: T
-    parseHook(e, n)
-    s.add e
-
-proc parseHook[T](s: var HashSet[T], node: UsuNode) =
-  checkKind node, UsuArray
-  for n in node.elems:
-    var e: T
-    parseHook(e, n)
-    s.incl e
-
-proc parseHook[K,V](t: var OrderedTableRef[K, V], node: UsuNode) =
-  checkKind node, UsuMap
-  new t
-  for k, v in node.fields.pairs:
-    var p: Params
-    parseHook(p, v)
-    t[k] = p
-
-proc parseHook(o: var object, node: UsuNode) =
-  checkKind node, UsuMap
-  for name, value in o.fieldPairs:
-    if name in node.fields:
-      parseHook(value, node.fields[name])
-
-proc to[T](node: UsuNode, t: typedesc[T]): T =
-  parseHook(result, node)
-
 proc to(old: ForgeConfig, _: typedesc[Config]): Config =
   ## convert deprecated config to new config
   result.nimble = old.nimble
@@ -255,12 +212,12 @@ proc to(old: ForgeConfig, _: typedesc[Config]): Config =
   new result.targets.settings
   for k, v in old.targets.pairs:
     if v != "":
-      result.targets.settings[k] = Params(args: v)
+      result.targets.settings[k] = Params(args: v.split(" "))
   result.bins.paths = old.bins.keys().toSeq().toHashSet()
   new result.bins.settings
   for k, v in old.bins.pairs:
     if v != "":
-      result.bins.settings[k] = Params(args: v)
+      result.bins.settings[k] = Params(args: v.split(" "))
 
 proc newConfig*(
     targets: seq[string],
@@ -281,8 +238,6 @@ proc newConfig*(
     of ".ini",".cfg":
       result = fromFile(configFile, targets.len == 0, bins.len == 0).to(Config)
     of ".usu":
-      warn "usu handling is unstable and may be replaced in a future release"
-      # TODO: gracefully handle failures
       result = parseUsu(configFile.readFile).to(Config)
     else:
       errQuit "unexpected config file format: ", ext, "supported formats: ini, cfg, usu"
@@ -332,8 +287,7 @@ func params*(c: Config, triple: string, path: string): Params =
   for p in [tripleParams, binParams]:
     if p.format != "":
       result.format = p.format
-    if p.args != "":
-      result.args.add " " & p.args & " "
+    result.args.add p.args
 
 func getTriples*(c: Config): seq[string] {.inline.} =
   c.targets.triples.toSeq()
@@ -345,11 +299,10 @@ func baseCmd*(c: Config): string =
   if c.nimble: "nimble"
   else: "nim"
 
-
 proc chooseConfig*(): string =
   ## select a default file from the current directory
   template exists(p: string): untyped =
-    if p.fileExists: return p 
+    if p.fileExists: return p
   exists "forge.usu"
   exists ".forge.usu"
   exists "forge.cfg"
@@ -361,28 +314,31 @@ when isMainModule:
   const configStr = """
 #:nimble true
 #:outdir forge-dist
-:format ${name}-${target}
-:targets (
-  :triples (
+.format "${name}-${target}"
+.targets {
+  .triples [
     x86_64-linux-musl
     x86_64-linux-gnu
     x86_64-windows-gnu
     x86_64-macos-none
     aarch64-macos-none
     aarch64-linux-gnu
-  )
-  :settings (
-    :x86_64-linux-musl (:args "--opt:speed")
-    :x86-linux-gnu (:format "${name}-x86_64-linux-not-musl")
-  )
-)
+  ]
+  .settings {
+    .x86_64-linux-musl
+      {.args [--opt:speed]}
+    .x86-linux-gnu
+      {.format "${name}-x86_64-linux-not-musl"}
+  }
+}
 
-:bins (
-  :paths (src/forge src/forgecc)
-  :settings (
-    :src/forge (:args "--opt:size")
-  )
-)
+.bins {
+  .paths [src/forge src/forgecc]
+  .settings {
+    .src/forge {.args [--opt:size]}
+  }
+}
 """
   let c = parseUsu(configStr).to(Config)
+  echo c.bins.settings
   echo c.params("x86_64-linux-musl", "src/forge")

@@ -13,12 +13,12 @@
     },
     "usu": {
       "version": "0.1.0",
-      "vcsRevision": "c113c6282178b874cc37ef70d2b2b2524849d277",
+      "vcsRevision": "0a6b6bc9b1c151ff2404d6f9857b3c2626d1929f",
       "url": "https://github.com/usu-dev/usu-nim",
       "downloadMethod": "git",
       "dependencies": [],
       "checksums": {
-        "sha1": "9c635d33589badf49bd2ad7b4a4b848eb1698be3"
+        "sha1": "8b46d14ee7af81d3c8b6468b25648f442ec47fd1"
       }
     }
   },

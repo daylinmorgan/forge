@@ -95,8 +95,13 @@ proc release(
 ) =
   zigExists()
 
-  let cfg =
-    newConfig(target, bin, outdir, format, name, version, nimble, configFile, noConfig)
+  var cfg: Config
+  try:
+    cfg =
+      newConfig(target, bin, outdir, format, name, version, nimble, configFile, noConfig)
+  except:
+    errQuit fmt"""failed to load config file at "{configFile}": {getCurrentExceptionMsg()}"""
+
   if not cfg.hasTargets:
     errQuit "expected at least 1 target"
   if not cfg.hasBins:
