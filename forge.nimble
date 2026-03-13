@@ -8,5 +8,5 @@ binDir        = "bin"
 
 
 requires "nim >= 2.0.0"
-requires "https://github.com/daylinmorgan/hwylterm#3f19c64a"
-requires "usu#head"
+requires "hwylterm >= 0.3.0"
+requires "usu#c672b064"
