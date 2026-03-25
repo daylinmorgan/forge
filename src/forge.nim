@@ -174,18 +174,18 @@ hwylCli:
   cross-compile nim binaries with [b yellow]zig[/]
  
   example usages:
-    forge +release
+    [b]forge +release
     forge +zig version
     forge +cc --target x86_64-linux-musl -- -d:release src/forge.nim
-    forge +release --backend cpp
+    forge +release --backend cpp[/]
 
   forge is also a wrapper around zig:
     for zig cc:
-      forge -o hello hello.c
-      forge +zig cc -o hello hello.c
+      [b]forge -o hello hello.c
+      forge +zig cc -o hello hello.c[/]
     for zig c++:
-      FORGE_BACKEND=cpp forge -o hello hello.cpp
-      forge +zig c++ -o hello hello.cpp
+      [b]FORGE_BACKEND=cpp forge -o hello hello.cpp
+      forge +zig c++ -o hello hello.cpp[/]
   """
   settings LongHelp
   V vsn
