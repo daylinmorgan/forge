@@ -1,6 +1,5 @@
 import std/[parsecfg, paths, os, sequtils, sets, strutils, strformat, tables]
 import usu
-from usu/parser import UsuParserError, UsuNodeKind
 
 import ./term
 
