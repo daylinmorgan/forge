@@ -46,7 +46,7 @@ proc getMacSdkFlags*(): string =
       sdkDir = sysroot.strip()
       macos_lib = quoteShell(&"{sdkDir}/usr/lib")
       macos_include = quoteShell(&"{sdkDir}/usr/include")
-      macos_frameworks = quoteShell(&"{sdkDir}/system/Library/Frameworks")
+      macos_frameworks = quoteShell(&"{sdkDir}/System/Library/Frameworks")
     result = &"-I{macos_include} -F{macos_frameworks} -L{macos_lib}"
   else:
     let
