@@ -29,6 +29,9 @@ proc fetchSdk*(force: bool = false) =
     else: return
   # info "cloning macos sdk to: " & $SDK_CACHE
   createDir($SDK_CACHE.parentDir)
+  if findExe("git") == "":
+    err "git required to download macos sdk's"
+    quit 1
   let (output, code) = execCmdEx(fmt"git clone {SDK_REPO_URL} {quoteShell($SDK_CACHE)}")
   if code != 0:
     err "git clone failed:\n" & output
