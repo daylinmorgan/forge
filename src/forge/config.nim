@@ -203,11 +203,16 @@ proc newForgeConfig*(
     if bin != "":
       result.bins[bin] = ""
 
+
 proc to(old: ForgeConfig, _: typedesc[Config]): Config =
   ## convert deprecated config to new config
+
+  result.name = old.name
+  result.version = old.version
   result.nimble = old.nimble
   result.format = old.format
   result.outdir = old.outdir
+
   result.targets.triples = old.targets.keys().toSeq().toHashSet()
   new result.targets.settings
   for k, v in old.targets.pairs:
