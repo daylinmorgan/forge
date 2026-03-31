@@ -45,6 +45,7 @@ proc forgeCompile(baseCmd: string, args: openArray[string], backend: string): in
     env = envWithBackend(backend)
   )
   result = p.waitForExit()
+  p.close()
 
 proc compile(
   target: string,
