@@ -305,14 +305,14 @@ func baseCmd*(c: Config): string =
 
 proc chooseConfig*(): string =
   ## select a default file from the current directory
-  template exists(p: string): untyped =
-    if p.fileExists: return p
-  exists "forge.usu"
-  exists ".forge.usu"
-  exists "forge.cfg"
-  exists "forge.ini"
-  exists ".forge.cfg"
-  exists ".forge.ini"
+  const candidates = [
+    "forge.usu", ".forge.usu",
+    "forge.cfg", "forge.ini",
+    ".forge.cfg", ".forge.ini"
+  ]
+  for p in candidates:
+    if p.fileExists:
+      return p
 
 when isMainModule:
   const configStr = """
