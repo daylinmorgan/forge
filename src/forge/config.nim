@@ -18,18 +18,57 @@ type
   Params* = object
     args*: seq[string]
     format*: string
-  Settings = OrderedTableRef[string, Params]
-  Targets* = object
-    triples*: HashSet[string]
-    settings*: Settings
-  Bins = object
-    paths*: HashSet[string]
-    settings*: Settings
+  Target* = object
+    triple*: string
+    params*: Params
+  Bin* = object
+    path*: string
+    params*: Params
   Config* = object
     name*, version*, format*, outdir*: string
     nimble*: bool
-    targets*: Targets
-    bins*: Bins
+    targets*: seq[Target]
+    bins*: seq[Bin]
+
+
+proc init(_: typedesc[Bin], path: string): Bin =
+  result.path = path
+proc init(_: typedesc[Target], triple: string): Target =
+  result.triple = triple
+
+proc fromUsu[T: Target | Bin](target: var seq[T], u: UsuNode) =
+  ## take advantage of Usu's loosing parse the same name twice
+  checkKind u, UsuArray
+  for e in u.elems:
+    checkKind e, {UsuMap, UsuValue}
+    case e.kind
+    of UsuMap:
+      var v: T
+      fromUsu(v, e)
+      if "params" notin e.fields:
+        fromUsu(v.params, e)
+      target.add v
+    of UsuValue:
+      var v: string
+      fromUsu(v, e)
+      target.add T.init(v)
+    else: assert false
+
+func hasTargets*(c: Config): bool {.inline.} =
+  c.targets.len > 0
+func hasBins*(c: Config): bool {.inline.} =
+  c.bins.len > 0
+
+func params*(c: Config, target: Target, bin: Bin): Params =
+  result.format = c.format
+  for p in [target.params, bin.params]:
+    if p.format != "":
+      result.format = p.format
+    result.args.add p.args
+
+func buildPlan*(c: Config): string =
+  fmt"compiling {c.bins.len} binaries for {c.targets.len} targets"
+
 
 proc showConfig*(c: ForgeConfig) {.deprecated.} =
   var lines: string = ""
@@ -66,6 +105,8 @@ proc bbImpl(p: Params): string =
     result.add fmt"[i]args[/]: {bbEscape($p.args)}"
   result.add "[/]"
 
+proc empty(p: Params): bool = p.args.len == 0 and p.format == ""
+
 proc bbImpl(c: Config): string =
   template addLine(l: string) =
     result.add(l & "\n")
@@ -77,17 +118,17 @@ proc bbImpl(c: Config): string =
 | [blue]version[/] {c.version}"""
 
   addLine "| [green]targets[/]:"
-  for triple in c.targets.triples:
-    result.add fmt"|   {triple}"
-    if triple in c.targets.settings:
-      result.add bbImpl(c.targets.settings[triple])
+  for t in c.targets:
+    result.add fmt"|   {t.triple}"
+    if not t.params.empty:
+      result.add bbImpl(t.params)
     result.add "\n"
 
   addLine "| [green]bins[/]:"
-  for bin in c.bins.paths:
-    result.add fmt"|   {bin}"
-    if bin in c.bins.settings:
-      result.add bbImpl(c.bins.settings[bin])
+  for b in c.bins:
+    result.add fmt"|   {b.path}"
+    if not b.params.empty:
+      result.add bbImpl(b.params)
     result.add "\n"
   result.strip()
 
@@ -212,16 +253,10 @@ proc to(old: ForgeConfig, _: typedesc[Config]): Config =
   result.format = old.format
   result.outdir = old.outdir
 
-  result.targets.triples = old.targets.keys().toSeq().toHashSet()
-  new result.targets.settings
-  for k, v in old.targets.pairs:
-    if v != "":
-      result.targets.settings[k] = Params(args: v.split(" "))
-  result.bins.paths = old.bins.keys().toSeq().toHashSet()
-  new result.bins.settings
-  for k, v in old.bins.pairs:
-    if v != "":
-      result.bins.settings[k] = Params(args: v.split(" "))
+  for triple, args in old.targets.pairs:
+    result.targets.add Target(triple: triple, params: Params(args: args.split(" ")))
+  for path, args in  old.bins.pairs:
+    result.bins.add Bin(path: path, params: Params(args: args.split(" ")))
 
 proc newConfig*(
     targets: seq[string],
@@ -246,11 +281,6 @@ proc newConfig*(
     else:
       errQuit "unexpected config file format: ", ext, "supported formats: ini, cfg, usu"
 
-  if result.targets.settings == nil:
-    new result.targets.settings
-  if result.bins.settings == nil:
-    new result.bins.settings
-
   result.nimble = result.nimble or nimble
 
   # TODO: make sure this is consistent?
@@ -265,39 +295,17 @@ proc newConfig*(
     result.format = format
 
   for t in targets:
-    result.targets.triples.incl t
+    result.targets.add Target.init(t)
   for b in bins:
-    result.bins.paths.incl b
+    result.bins.add Bin.init(b)
 
-  if result.bins.paths.len == 0 and nimbleFile != "":
+  if result.bins.len == 0 and nimbleFile != "":
     let bin = inferBin(nimbleFile)
     if bin != "":
-      result.bins.paths.incl bin
-
-func hasTargets*(c: Config): bool {.inline.} =
-  c.targets.triples.len > 0
-func hasBins*(c: Config): bool {.inline.} =
-  c.bins.paths.len > 0
-
-func getParams(x: Targets | Bins, item: string): Params =
-  if item in x.settings:
-    result = x.settings[item]
-
-func params*(c: Config, triple: string, path: string): Params =
-  result.format = c.format
-  let tripleParams = c.targets.getParams(triple)
-  let binParams = c.bins.getParams(path)
-
-  for p in [tripleParams, binParams]:
-    if p.format != "":
-      result.format = p.format
-    result.args.add p.args
+      result.bins.add Bin.init(bin)
 
 func getTriples*(c: Config): seq[string] {.inline.} =
-  c.targets.triples.toSeq()
-
-func buildPlan*(c: Config): string =
-  fmt"compiling {c.bins.paths.len} binaries for {c.targets.triples.len} targets"
+  c.targets.mapIt(it.triple)
 
 func baseCmd*(c: Config): string =
   if c.nimble: "nimble"
@@ -316,33 +324,26 @@ proc chooseConfig*(): string =
 
 when isMainModule:
   const configStr = """
-#:nimble true
-#:outdir forge-dist
+#.nimble true
 .format "${name}-${target}"
-.targets {
-  .triples [
-    x86_64-linux-musl
-    x86_64-linux-gnu
-    x86_64-windows-gnu
-    x86_64-macos-none
-    aarch64-macos-none
-    aarch64-linux-gnu
-  ]
-  .settings {
-    .x86_64-linux-musl
-      {.args [--opt:speed]}
-    .x86-linux-gnu
-      {.format "${name}-x86_64-linux-not-musl"}
-  }
-}
+.outdir forge-dist
 
-.bins {
-  .paths [src/forge src/forgecc]
-  .settings {
-    .src/forge {.args [--opt:size]}
+.targets [
+  x86_64-linux-musl
+  {.triple x86_64-macos-none .args [--opt:speed]}
+  {.triple x86_64-linux-gnu .format "${name}-x86_64-linux-not-musl"}
+]
+
+.bins [
+  src/forge
+  {
+    .path src/forgecc
+    .params {.args [--opt:size]}
   }
-}
+]
 """
-  let c = parseUsu(configStr).to(Config)
-  echo c.bins.settings
-  echo c.params("x86_64-linux-musl", "src/forge")
+
+  let c = parseUsu(configStr).to(Config2)
+  echo c
+  # echo c.bins.settings
+  # echo c.params("x86_64-linux-musl", "src/forge")

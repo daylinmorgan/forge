@@ -84,6 +84,7 @@ src/forgecc = "--opt:size" # use a custom flag for this binary
 ```
 
 <details>
+
 <summary>config example using new usu format</summary>
 
 ```usu
@@ -91,24 +92,16 @@ src/forgecc = "--opt:size" # use a custom flag for this binary
 .format "${name}-${target}"
 .outdir forge-dist
 
-.target {
-  .triples [
-    x86_64-linux-musl
-    x86_64-linux-gnu
-  ]
-  .x86_64-linux-musl
-    {.args [--opt:speed]}
-  .x86-linux-gnu
-    {.format "${name}-x86_64-linux-not-musl"}
-  }
-}
+.targets [
+  x86_64-linux-musl
+  {.triplet x86_64-macos-none .args [--opt:speed]}
+  {.triplet x86_64-linxu-gnu .format "${name}-x86_64-linux-not-musl"}
+]
 
-.bins {
-  .paths [ src/forge src/forgecc ]
-  .settings {
-    .src/forge {.args [--opt:size]}
-  }
-}
+.bins [
+  src/forge
+  {.path  src/forgecc .args [--opt:size] .format "${name}-small"}
+]
 ```
 
 </details>

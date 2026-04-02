@@ -50,13 +50,6 @@ proc formatDirName*(
   if result == "":
     errQuit &"err processing formatstr: {formatstr}"
 
-proc newBuild*(c: Config, target: string, bin: string): Build =
-  let params = c.params(target, bin)
-  result.bin = bin
-  result.triple = target
-  result.params = params
-  result.outDir = c.outDir / formatDirName(params.format, c.name, c.version, target)
-
 proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string]): seq[string] =
 
   result.add backend
@@ -73,11 +66,16 @@ proc args*(b: Build, backend: string, noMacosSdk: bool, rest: openArray[string])
 
   result.add b.bin.normalizedPath()
 
-iterator builds*(c: Config): Build =
-  for t in c.targets.triples:
-    for b in c.bins.paths:
-      yield newBuild(c, t, b)
+proc newBuild*(c: Config, target: Target, bin: Bin): Build =
+  result.bin = bin.path
+  result.triple = target.triple
+  result.params = c.params(target, bin)
+  result.outDir = c.outDir / formatDirName(result.params.format, c.name, c.version, result.triple)
 
+iterator builds*(c: Config): Build =
+  for t in c.targets:
+    for b in c.bins:
+      yield newBuild(c, t, b)
 
 type
   # just because they use a string doesn't mean I have too...

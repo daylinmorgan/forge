@@ -1,7 +1,7 @@
 # this is a possible upcoming config format based on usu that is slightly more flexible
 # if you are reading this you should probably still be using .forge.{cfg,ini}
 
-.targets.triples [
+.targets [
   x86_64-linux-musl
   x86_64-linux-gnu
   x86_64-windows-gnu
@@ -10,6 +10,6 @@
   aarch64-linux-gnu
 ]
 
-.bins.paths [
+.bins [
   src/forge
 ]
