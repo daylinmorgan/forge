@@ -94,8 +94,8 @@ src/forgecc = "--opt:size" # use a custom flag for this binary
 
 .targets [
   x86_64-linux-musl
-  {.triplet x86_64-macos-none .args [--opt:speed]}
-  {.triplet x86_64-linxu-gnu .format "${name}-x86_64-linux-not-musl"}
+  {.triple x86_64-macos-none .args [--opt:speed]}
+  {.triple x86_64-linxu-gnu .format "${name}-x86_64-linux-not-musl"}
 ]
 
 .bins [
