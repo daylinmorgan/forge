@@ -1,18 +1,8 @@
 {
   "version": 2,
   "packages": {
-    "nim": {
-      "version": "2.2.8",
-      "vcsRevision": "f1f6cb4826c6d878e5a3304b0196d45a03cfaf5c",
-      "url": "https://github.com/nim-lang/Nim.git",
-      "downloadMethod": "git",
-      "dependencies": [],
-      "checksums": {
-        "sha1": "46b3923a8c0a031bfe29df5c5903c8c4898d338f"
-      }
-    },
     "usu": {
-      "version": "#c672b064",
+      "version": "0.1.0",
       "vcsRevision": "c672b064c401f5cac0efa15264b02f893ce8717f",
       "url": "https://github.com/usu-dev/usu-nim",
       "downloadMethod": "git",

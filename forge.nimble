@@ -9,4 +9,4 @@ binDir        = "bin"
 
 requires "nim >= 2.0.0"
 requires "hwylterm >= 0.3.0"
-requires "usu#c672b064"
+requires "usu#09b8ba9e"
