@@ -9,7 +9,3 @@
   aarch64-macos-none
   aarch64-linux-gnu
 ]
-
-.bins [
-  src/forge
-]
