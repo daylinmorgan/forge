@@ -50,20 +50,20 @@ jobs:
         run: |
           nimble install -Y
 
+      - name: Setup forge deps
+        run: nimble setup -l
+
       - name: simple test module that relies on a macos framework
         run: forge +release --verbose --bin tests/random.nim
 
       - name: cross compile forge
-        run: |
-          nimble setup -l
-          forge +release --verbose ${{ github.event.inputs.flags }}
+        run: forge +release --verbose ${{ github.event.inputs.flags }}
 
       - uses: actions/checkout@v5
         with:
           repository: nim-lang/nimble
           path: nimble-repo
           submodules: recursive
-          ref: v0.20.1
 
       - name: cross-compile nimble
         working-directory: nimble-repo
