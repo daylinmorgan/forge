@@ -43,7 +43,7 @@ jobs:
 
       - name: Update nimble
         run: |
-          nimble install nimble
+          nimble install nimble -g --noLockFile
           nimble --version
 
       - name: Bootstrap with nimble
