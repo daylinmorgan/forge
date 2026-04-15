@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         nim-version: [ "2.0.16", "stable"]
-        zig-version: [ "0.14.1", "latest"]
+        zig-version: [ "0.15.2", "latest"]
 
     runs-on: ${{ matrix.os }}
 
