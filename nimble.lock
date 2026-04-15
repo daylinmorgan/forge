@@ -24,15 +24,15 @@
       }
     },
     "hwylterm": {
-      "version": "0.3.0",
-      "vcsRevision": "437c55998c1a738664d520ab831cbbfa96d5c2fd",
+      "version": "0.3.1",
+      "vcsRevision": "4ff29465b2403426d337d607e18b52c221a21111",
       "url": "https://github.com/daylinmorgan/hwylterm",
       "downloadMethod": "git",
       "dependencies": [
         "nim"
       ],
       "checksums": {
-        "sha1": "2e6501b0bc5e2ea72c5dd571fdb4129163629b42"
+        "sha1": "aace89d741d5e4a1400db68a82159621af51dcde"
       }
     }
   },
